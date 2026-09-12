@@ -1,0 +1,8 @@
+# Hardware/networking deps for running handheld/handheld/{sensors,outputs,sync}.py on the
+# real Raspberry Pi (3B or 4). Separate from requirements.txt (sklearn/numpy for the
+# classifier/model side) because none of these install or import on a non-Pi dev machine.
+spidev                          # MQ sensors via MCP3008 SPI ADC
+adafruit-circuitpython-bme680   # Bosch BME688 over I2C (register-compatible w/ BME680 driver)
+gpiozero                        # buzzer / vibration motor / LEDs
+rpi-lgpio                       # gpiozero's backend on Pi 5; harmless no-op on 3B/4
+paho-mqtt                       # push scan events to the dashboard

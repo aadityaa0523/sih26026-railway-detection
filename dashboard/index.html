@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SenseGuard Control Room</title>
+<style>
+  /* No external fonts/CDNs on purpose: this dashboard has to work on a station LAN
+     with no internet, so it only uses the OS's own system-ui font stack. */
+  :root{
+    --bg:#0b1220; --surface:#111a2b; --surface-2:#16223a; --line:#233252;
+    --ink:#e8edf7; --ink-dim:#8fa0c0;
+    --accent:#3aa7ff; --accent-soft:#0e2540; --accent-ink:#04121f;
+    --clean:#33d17a; --clean-soft:#0f2a1c;
+    --review:#f4b740; --review-soft:#332608;
+    --alert:#ff4d4d; --alert-soft:#3a1010;
+    --shadow:0 20px 50px -20px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,"Segoe UI",sans-serif;}
+  h1,h2,h3{margin:0; font-weight:700;}
+  [hidden]{display:none!important;}
+  button{font-family:inherit; cursor:pointer;}
+  .mono{font-variant-numeric:tabular-nums; font-family:ui-monospace,"Consolas",monospace;}
+
+  .app{max-width:1180px; margin:0 auto; padding:14px 16px 40px; display:flex; flex-direction:column; gap:14px;}
+
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 16px;}
+  .brand{display:flex; align-items:center; gap:10px; font-size:19px; letter-spacing:.2px;}
+  .brand .mark{font-size:22px;}
+  .topbar-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+
+  .status-pill{display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-dim);}
+  .status-dot{width:8px; height:8px; border-radius:50%; background:var(--ink-dim);}
+  .status-pill.online .status-dot{background:var(--clean);}
+  .status-pill.offline .status-dot{background:var(--review);}
+  .queue-pill{font-size:12.5px; padding:6px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-dim);}
+  .queue-pill.has-queue{color:var(--review); border-color:var(--review);}
+
+  .lang-toggle{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .lang-toggle button{padding:7px 12px; background:var(--surface-2); color:var(--ink-dim); border:none; font-size:13px; font-weight:600;}
+  .lang-toggle button.active{background:var(--accent); color:var(--accent-ink);}
+
+  .sample-banner{background:var(--review-soft); border:1px solid var(--review); color:var(--review); border-radius:10px; padding:10px 14px; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:8px;}
+
+  .tabbar{display:flex; gap:6px;}
+  .tabbtn{padding:9px 16px; background:var(--surface); border:1px solid var(--line); border-radius:8px; color:var(--ink-dim); font-weight:600; font-size:13.5px;}
+  .tabbtn.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px; box-shadow:var(--shadow);}
+
+  .table-scroll{overflow-x:auto;}
+  table.feed{width:100%; min-width:640px; border-collapse:collapse; font-size:13.5px;}
+  table.feed th{text-align:left; color:var(--ink-dim); font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; padding:6px 10px; border-bottom:1px solid var(--line);}
+  table.feed td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  table.feed tr.feed-row{cursor:pointer;}
+  table.feed tr.feed-row:hover{background:var(--surface-2);}
+  .sample-tag{font-size:9.5px; font-weight:700; color:var(--ink-dim); border:1px solid var(--line); border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:middle;}
+
+  .pill{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; letter-spacing:.3px;}
+  .pill.tier-clean{background:var(--clean-soft); color:var(--clean);}
+  .pill.tier-review{background:var(--review-soft); color:var(--review);}
+  .pill.tier-alert{background:var(--alert-soft); color:var(--alert);}
+
+  .map-wrap{display:flex; gap:14px; flex-wrap:wrap;}
+  .map-svg{flex:1; min-width:320px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px;}
+  .legend{display:flex; flex-direction:column; gap:8px; min-width:160px; font-size:13px;}
+  .legend-item{display:flex; align-items:center; gap:8px;}
+  .legend-dot{width:11px; height:11px; border-radius:50%;}
+
+  .overlay{position:fixed; inset:0; background:rgba(3,7,15,.65); display:flex; align-items:flex-start; justify-content:center; padding:30px 14px; overflow-y:auto; z-index:10;}
+  .detail{width:100%; max-width:640px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:16px;}
+  .detail-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .close-btn{background:var(--surface-2); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:6px 10px; font-size:13px;}
+
+  .kv{display:grid; grid-template-columns:auto 1fr; gap:5px 14px; font-size:13.5px;}
+  .kv dt{color:var(--ink-dim);}
+  .kv dd{margin:0;}
+
+  .chain-badge{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:13px; padding:5px 10px; border-radius:8px;}
+  .chain-badge.ok{background:var(--clean-soft); color:var(--clean);}
+  .chain-badge.bad{background:var(--alert-soft); color:var(--alert);}
+
+  textarea.memo{width:100%; min-height:220px; background:var(--surface-2); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:10px; font-family:ui-monospace,monospace; font-size:12.5px; line-height:1.5; resize:vertical;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  input.officer-id{background:var(--surface-2); border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:8px 10px; font-size:13px;}
+  .btn{background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px; padding:9px 14px; font-weight:700; font-size:13.5px;}
+  .btn.ghost{background:var(--surface-2); color:var(--ink); border:1px solid var(--line);}
+  .copy-feedback{font-size:12px; color:var(--clean); min-height:16px;}
+
+  footer.disclaimer{font-size:11.5px; color:var(--ink-dim); border-top:1px solid var(--line); padding-top:10px;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div class="brand"><span class="mark">🛡️</span><span data-t="appTitle">SenseGuard Control Room</span></div>
+    <div class="topbar-right">
+      <span class="status-pill offline" id="connStatus"><span class="status-dot"></span><span id="connStatusText" data-t="statusOffline">Offline (Demo Mode)</span></span>
+      <span class="queue-pill" id="queuePill"></span>
+      <div class="lang-toggle">
+        <button id="langEn" class="active" data-lang="en">EN</button>
+        <button id="langHi" data-lang="hi">हिं</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sample-banner">⚠ <span data-t="sampleBanner">SAMPLE / DEMO DATA — no live sensors connected. Every event below is a scripted example, not a real detection.</span></div>
+
+  <div class="tabbar">
+    <button class="tabbtn active" id="tabFeedBtn" data-t="tabFeed">Alert Feed</button>
+    <button class="tabbtn" id="tabMapBtn" data-t="tabMap">Station Map</button>
+  </div>
+
+  <section class="panel" id="viewFeed">
+    <div class="table-scroll">
+    <table class="feed">
+      <thead>
+        <tr>
+          <th data-t="colTime">Time</th>
+          <th data-t="colLocation">Location</th>
+          <th data-t="colTier">Tier</th>
+          <th data-t="colLabel">Predicted Label</th>
+          <th data-t="colConfidence">Confidence</th>
+          <th data-t="colDevice">Device</th>
+        </tr>
+      </thead>
+      <tbody id="feedBody"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="panel" id="viewMap" hidden>
+    <div class="map-wrap">
+      <div id="mapSvgHolder" class="map-svg"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--clean)"></span><span data-t="tierClean">Clean</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--review)"></span><span data-t="tierReview">Review</span></div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--alert)"></span><span data-t="tierAlert">Alert</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="disclaimer" data-t="footerNote">
+    SenseGuard is a tier-1 presumptive screen (volatile marker compounds), not confirmatory lab analysis. All results here must be verified per NDPS Act 1985 Sec. 50 procedure before any legal action.
+  </footer>
+</div>
+
+<div class="overlay" id="detailOverlay" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
