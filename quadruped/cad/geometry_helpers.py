@@ -10,6 +10,33 @@ import math
 import FreeCAD as App
 import Part
 
+import params
+
+
+def chassis_envelope(z0=0.0):
+    """The v3 envelope contract (params.py V3 SPEC) as one solid, in the body frame with the
+    hip ab/ad axis at Z=z0: the body box plus the front and rear nose boxes. Chassis parts
+    live inside this (or above z0+LEG_MAX_Z); leg modules must never enter it."""
+    hx, top = params.BASE_TO_HIP_X, z0 + params.LEG_MAX_Z
+    body_bot = z0 - params.BODY_MAX_BELOW_HIP
+    nose_bot = z0 - params.NOSE_MAX_BELOW_HIP
+    env = Part.makeBox(2 * hx, 2 * params.BODY_MAX_HALF_W, top - body_bot,
+                       App.Vector(-hx, -params.BODY_MAX_HALF_W, body_bot))
+    for x0 in (hx, -hx - params.NOSE_MAX_X):
+        env = env.fuse(Part.makeBox(params.NOSE_MAX_X, 2 * params.NOSE_HALF_W, top - nose_bot,
+                                    App.Vector(x0, -params.NOSE_HALF_W, nose_bot)))
+    return env
+
+
+def leg_zone(z0=0.0, reach=600.0):
+    """Where the leg modules may move: everything below z0+LEG_MAX_Z that is outside
+    chassis_envelope(). Any chassis solid with a non-zero .common() against this breaks the
+    contract."""
+    top = z0 + params.LEG_MAX_Z
+    zone = Part.makeBox(2 * reach, 2 * reach, reach + params.LEG_MAX_Z,
+                        App.Vector(-reach, -reach, top - reach - params.LEG_MAX_Z))
+    return zone.cut(chassis_envelope(z0))
+
 
 def cut_bolt_circle(shape, cx, z_center, bracket_width, thickness, hole_dia, bolt_circle_dia, n=4):
     """Cut a center clearance hole plus an n-hole bolt circle around it, all bored
