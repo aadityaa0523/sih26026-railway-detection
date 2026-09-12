@@ -15,6 +15,10 @@ before mirroring to a full leg (+lower leg, +foot) and then all four legs + body
 Open the exported .FCStd in FreeCAD to actually look at it -- this script only proves
 the geometry is buildable and reports its bounding box; it cannot render a screenshot
 headlessly.
+
+Also carries a cable routing channel (improvement 7) along the link's front face -- a
+shallow groove sized for a 3-4 servo signal wire bundle, kept clear of the hip-end servo
+pocket and the knee-end bolt circle.
 """
 import FreeCAD as App
 import Part
@@ -49,8 +53,19 @@ bar = cut_servo_pocket_with_tabs(
 # Knee end: a boss clearance hole (for the knee servo's spline/horn to pass through) plus
 # a 4-bolt circle to bolt the link directly onto the knee servo horn.
 cx = BRACKET_WIDTH / 2.0
-bar = cut_bolt_circle(bar, cx, 20.0, BRACKET_WIDTH, BRACKET_THICKNESS,
+KNEE_Z = 20.0
+bar = cut_bolt_circle(bar, cx, KNEE_Z, BRACKET_WIDTH, BRACKET_THICKNESS,
                        KNEE_HORN_HOLE_DIA, KNEE_BOLT_CIRCLE_DIA)
+
+# Cable routing channel (improvement 7): a shallow groove along the link's front face
+# (Y=0), sized for a 3-4 servo signal wire bundle, kept clear of the knee bolt-circle
+# cluster (below) and the hip-end servo pocket (above) via computed buffers, not a flat
+# symmetric margin (the two end features are different shapes/sizes).
+channel_z0 = KNEE_Z + params.KNEE_BOLT_CIRCLE_DIA / 2.0 + 5.0   # mm, past the bolt holes
+channel_z1 = (UPPER_LEG_LENGTH - SERVO_BODY_H) - 5.0             # mm, short of the hip pocket
+channel = Part.makeBox(params.CABLE_CHANNEL_WIDTH, params.CABLE_CHANNEL_DEPTH, channel_z1 - channel_z0,
+                        App.Vector(cx - params.CABLE_CHANNEL_WIDTH / 2.0, 0, channel_z0))
+bar = bar.cut(channel)
 
 part = doc.addObject("Part::Feature", "UpperLegLink")
 part.Shape = bar

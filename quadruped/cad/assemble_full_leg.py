@@ -43,10 +43,46 @@ out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
 LEG_BRACKET_WIDTH = params.SERVO_BODY_W + 2 * params.WALL  # 28.2mm
 
 
-def build_full_leg():
-    """Load the 3 STEP shapes fresh and mate them into one hip-to-foot leg.
+def build_bellows(hip_shift, hip_cx, hip_attach_point):
+    """Dust bellows/gaiters (improvement 2) -- simple cylindrical boots (the brief's own
+    "fine CAD approximation" of a real molded part) bridging the knee-joint gap (between
+    upper and lower leg) and the hip-joint gap (between the hip-bracket horn and the upper
+    leg's hip-end pocket). These are BOUGHT or MOLDED rubber/silicone parts, NOT
+    3D-printed -- same documented-assumption level as the rubber foot cap. Kept as
+    SEPARATE, non-structural shapes (see assemble_robot.py) -- they are expected to closely
+    surround the leg bar by design (a boot fits snugly around a real joint), so they are
+    intentionally excluded from the structural interference check rather than risk a false
+    "clash" report on geometry that is supposed to overlap in free space around the bar.
 
-    Returns (hip_shape, upper_shape, lower_shape, hip_attach_point):
+    Both boots share the same ID/OD/length (params.py) -- the knee and hip gaps are both
+    bridging the SAME 28.2x8mm leg-bar cross-section, so one generic boot size covers both,
+    the same "reuse one interface at both joints" approach already used for the knee/hip
+    bolt-circle dimensions.
+    """
+    leg_cy = hip_shift.y + params.SERVO_BODY_W / 2.0 + params.WALL   # leg bar's own Y-center (BRACKET_THICKNESS/2)
+    half_len = params.BELLOWS_LENGTH / 2.0
+
+    knee_center = App.Vector(hip_cx, leg_cy, hip_shift.z)
+    knee_bellows = Part.makeCylinder(params.BELLOWS_OD / 2.0, params.BELLOWS_LENGTH,
+                                      knee_center + App.Vector(0, 0, -half_len), App.Vector(0, 0, 1))
+    knee_bore = Part.makeCylinder(params.BELLOWS_ID / 2.0, params.BELLOWS_LENGTH,
+                                   knee_center + App.Vector(0, 0, -half_len), App.Vector(0, 0, 1))
+    knee_bellows = knee_bellows.cut(knee_bore)
+
+    hip_center = App.Vector(hip_cx, leg_cy, hip_attach_point.z)
+    hip_bellows = Part.makeCylinder(params.BELLOWS_OD / 2.0, params.BELLOWS_LENGTH,
+                                     hip_center + App.Vector(0, 0, -half_len), App.Vector(0, 0, 1))
+    hip_bore = Part.makeCylinder(params.BELLOWS_ID / 2.0, params.BELLOWS_LENGTH,
+                                  hip_center + App.Vector(0, 0, -half_len), App.Vector(0, 0, 1))
+    hip_bellows = hip_bellows.cut(hip_bore)
+
+    return [knee_bellows, hip_bellows]
+
+
+def build_full_leg():
+    """Load the STEP shapes fresh and mate them into one hip-to-foot leg.
+
+    Returns (hip_shape, upper_shape, lower_shape, hip_attach_point, bellows_shapes, cap_shape):
     - hip_shape is returned UNTRANSLATED, still in its own native local frame
       (X:[0,HIP_X], Y:[0,HIP_Y], Z:[0,HIP_Z]) -- callers (this script's __main__ and
       assemble_robot.py) both need that native frame to then place the whole leg at a
@@ -54,9 +90,18 @@ def build_full_leg():
     - upper_shape / lower_shape are positioned relative to that same hip-local frame.
     - hip_attach_point is the App.Vector of the hip horn bolt-circle center in that
       frame -- the "hip joint" reference used for the hip-to-foot length sanity check.
+    - bellows_shapes is a list of 2 dust-boot shapes (knee + hip, improvement 2, see
+      build_bellows) in that same frame -- non-structural, see build_bellows docstring.
+    - cap_shape (Chassis v2 item 8) is the hip housing's own separate cap, already in the
+      SAME native hip-local frame (build_hip_bracket.py positions it there directly) -- it
+      must follow the exact same abduction-tilt + mirror + translate transform the rest of
+      the leg gets (see assemble_robot.py), so it is returned untranslated here too.
     """
     hip_shape = Part.Shape()
     hip_shape.read(f"{out_dir}/hip_bracket.step")
+
+    cap_shape = Part.Shape()
+    cap_shape.read(f"{out_dir}/hip_bracket_cap.step")
 
     upper_shape = Part.Shape()
     upper_shape.read(f"{out_dir}/upper_leg.step")
@@ -85,26 +130,37 @@ def build_full_leg():
     lower_shape.translate(App.Vector(0, 0, -params.LOWER_LEG_LENGTH))
     lower_shape.translate(hip_shift)
 
-    return hip_shape, upper_shape, lower_shape, hip_attach_point
+    bellows_shapes = build_bellows(hip_shift, hip_cx, hip_attach_point)
+
+    return hip_shape, upper_shape, lower_shape, hip_attach_point, bellows_shapes, cap_shape
 
 
 doc = App.newDocument("assembled_full_leg")
 
-hip_shape, upper_shape, lower_shape, hip_attach_point = build_full_leg()
+hip_shape, upper_shape, lower_shape, hip_attach_point, bellows_shapes, cap_shape = build_full_leg()
 
 hip_obj = doc.addObject("Part::Feature", "HipBracket")
 hip_obj.Shape = hip_shape
+cap_obj = doc.addObject("Part::Feature", "HipBracketCap")
+cap_obj.Shape = cap_shape
 upper_obj = doc.addObject("Part::Feature", "UpperLeg")
 upper_obj.Shape = upper_shape
 lower_obj = doc.addObject("Part::Feature", "LowerLeg")
 lower_obj.Shape = lower_shape
+knee_bellows_obj = doc.addObject("Part::Feature", "KneeBellows")
+knee_bellows_obj.Shape = bellows_shapes[0]
+hip_bellows_obj = doc.addObject("Part::Feature", "HipBellows")
+hip_bellows_obj.Shape = bellows_shapes[1]
 doc.recompute()
 
 print(f"HipBracket solid valid: {hip_shape.isValid()}")
+print(f"HipBracketCap solid valid: {cap_shape.isValid()} (Chassis v2 item 8)")
 print(f"UpperLeg solid valid: {upper_shape.isValid()}")
 print(f"LowerLeg solid valid: {lower_shape.isValid()}")
+print(f"KneeBellows solid valid: {bellows_shapes[0].isValid()} (bought/molded rubber boot, non-structural)")
+print(f"HipBellows solid valid: {bellows_shapes[1].isValid()} (bought/molded rubber boot, non-structural)")
 
-combined = Part.makeCompound([hip_shape, upper_shape, lower_shape])
+combined = Part.makeCompound([hip_shape, cap_shape, upper_shape, lower_shape])
 bbox = combined.BoundBox
 print(f"Full leg (hip+upper+lower) bounding box (mm): "
       f"X={bbox.XLength:.1f} Y={bbox.YLength:.1f} Z={bbox.ZLength:.1f}")
@@ -117,15 +173,18 @@ raw_sum = params.UPPER_LEG_LENGTH + params.LOWER_LEG_LENGTH
 # The hip attach point sits SERVO_BODY_H/2 below the upper leg's own raw top (it's
 # the pocket's center, not the physical end of the bar) -- that inset shortens the
 # measured length vs. assemble_leg.py's raw sum, while the foot boss (unmodeled in
-# assemble_leg.py's structural_length) lengthens it back by FOOT_BOSS_HEIGHT (10mm).
+# assemble_leg.py's structural_length) lengthens it back by FOOT_BOSS_HEIGHT -- now
+# 16mm (was 10mm before improvement 3 widened/deepened the boss for the compliant-foot
+# spring+cap stack; computed here from the real geometry, not hardcoded twice).
 hip_inset_below_raw_top = params.SERVO_BODY_H / 2.0
+foot_boss_contribution = hip_to_foot_length - (raw_sum - hip_inset_below_raw_top)
 print(f"\nHip attachment point (horn bolt-circle center) Z = {hip_attach_point.z:.1f}mm")
 print(f"Foot boss bottom Z = {bbox.ZMin:.1f}mm")
 print(f"Full hip-to-foot-boss length: {hip_to_foot_length:.1f}mm "
       f"(vs. assemble_leg.py's raw upper+lower sum of {raw_sum:.1f}mm: "
       f"-{hip_inset_below_raw_top:.1f}mm because the hip attach point sits inside the "
-      f"upper leg's hip-end pocket, not at its raw top, +10.0mm for the foot boss "
-      f"assemble_leg.py's structural_length excluded)")
+      f"upper leg's hip-end pocket, not at its raw top, +{foot_boss_contribution:.1f}mm for "
+      f"the foot boss assemble_leg.py's structural_length excluded)")
 
 nominal_height = 200.0  # mm, CHAMP gait.yaml nominal_height = 0.20m (docs/champ-research.md #3.1)
 ratio = nominal_height / hip_to_foot_length
@@ -142,5 +201,6 @@ else:
           "range for legged robots; consider a bent/angled hip offset or re-checking link lengths.")
 
 doc.saveAs(f"{out_dir}/assembled_full_leg.FCStd")
-Part.export([hip_obj, upper_obj, lower_obj], f"{out_dir}/assembled_full_leg.step")
+Part.export([hip_obj, cap_obj, upper_obj, lower_obj, knee_bellows_obj, hip_bellows_obj],
+            f"{out_dir}/assembled_full_leg.step")
 print("\nSaved: assembled_full_leg.FCStd, assembled_full_leg.step")
