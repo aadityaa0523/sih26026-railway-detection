@@ -28,7 +28,7 @@ import Part
 
 import params
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 DECK_GAP = params.BODY_PLATE_THICKNESS + params.STANDOFF_HEIGHT
 TOP_DECK_TOP_Z = DECK_GAP + params.BODY_PLATE_THICKNESS

@@ -149,7 +149,7 @@ print(f"Volume: {cap.Volume:.0f} mm^3   Solid valid: {cap.isValid()}")
 print("Outer envelope + horn-face bolt-circle position UNCHANGED from v1 (hard constraint) -- "
       "only hollowed out + given a real internal servo mount + separate cap (item 8).")
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 doc.saveAs(f"{out_dir}/hip_bracket.FCStd")
 Part.export([part], f"{out_dir}/hip_bracket.step")
 Part.export([part], f"{out_dir}/hip_bracket.stl")

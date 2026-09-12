@@ -16,7 +16,7 @@ import Part
 
 import params
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 doc = App.newDocument("assembled_leg")
 

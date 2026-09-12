@@ -37,7 +37,7 @@ import Part
 
 import params
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 # Upper leg's own bracket width -- must match build_upper_leg.py exactly.
 LEG_BRACKET_WIDTH = params.SERVO_BODY_W + 2 * params.WALL  # 28.2mm

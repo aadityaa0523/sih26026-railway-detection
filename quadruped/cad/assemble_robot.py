@@ -93,7 +93,7 @@ import params
 import assemble_full_leg as leg
 from geometry_helpers import load_step_solids, build_hex_standoff
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 doc = App.newDocument("assembled_robot")
 

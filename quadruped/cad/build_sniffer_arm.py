@@ -35,7 +35,7 @@ import Part
 import params
 from geometry_helpers import build_sg90_mount_block
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 BASE_L, BASE_W, BASE_T = params.SENSING_BAY_L, params.SENSING_BAY_W, params.SNIFFER_BASE_T
 MOUNT_INSET = params.SENSING_BAY_HOLE_INSET   # matches the deck's own sensing-bay hole inset

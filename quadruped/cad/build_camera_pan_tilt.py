@@ -35,7 +35,7 @@ import Part
 import params
 from geometry_helpers import build_sg90_mount_block
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 W, D, T = params.PANTILT_BASE_W, params.PANTILT_BASE_D, params.PANTILT_BASE_T
 MOUNT_INSET = 6.0   # mm, matches build_top_deck.py's own mast mounting-plate inset

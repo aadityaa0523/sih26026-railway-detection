@@ -23,7 +23,7 @@ import Part
 
 import params
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 PANEL_L = 200.0   # mm, design choice -- spans the clear mid-body gap between the front/hind
                    # hip-mount X-bands (+-119 to +-231mm) with margin on both sides.

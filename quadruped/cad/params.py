@@ -6,13 +6,83 @@ CHAMP stock reference numbers -- docs/champ-research.md #3.1, from
 champ_description/urdf/properties.urdf.xacro (values there are in meters; converted
 to mm here since FreeCAD's Part module and these scripts work in mm).
 """
+import os
 
-# ---- CHAMP stock link/body dimensions (docs/champ-research.md #3.1) -------------------
-BASE_TO_HIP_X = 175.0        # mm, base_to_hip_x = 0.175m
-BASE_TO_HIP_Y = 105.0        # mm, base_to_hip_y = 0.105m
+# Output directory = this file's own folder, so scripts write next to themselves in any
+# checkout/worktree (freecadcmd scripts are run from this directory and import params).
+CAD_DIR = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 
-UPPER_LEG_LENGTH = 190.5     # mm, upper_leg_z_length = 0.1905m
-LOWER_LEG_LENGTH = 156.0     # mm, lower_leg_z_length = 0.156m
+# ==========================================================================================
+# V3 SPEC -- SpotMicro-scale redesign (option B, 2026-09-12). This block is the CONTRACT the
+# leg module, the chassis and the CHAMP/URDF config are built against in parallel. Change it
+# only deliberately; every other section may be edited by its owning script.
+# Why: check_mechanics.py showed the v2 leg can't walk (4/12 joints, coplanar knee, MG996R
+# 3-9x under-rated at a 500x290mm / 4.7kg scale). See README "Mechanics check".
+# ==========================================================================================
+# Frame: body origin at the geometric centre of the 4 hip points, +X front, +Y left, +Z up.
+# HIP POINT = centre of the hip ab/ad servo's horn face = CHAMP's <leg>_hip_joint origin.
+# Ab/ad axis runs along X through the hip point; front ab/ad shafts point +X, hind -X.
+BASE_TO_HIP_X = 110.0        # mm, design choice (SpotMicro-scale; body_length ~186mm in
+                              # mike4192/spotMicro, stretched for the Pi4 + LiDAR + sensing payload)
+BASE_TO_HIP_Y = 50.0         # mm, design choice (SpotMicro body_width 78mm -> +-39, widened to
+                              # fit the Pi4's 56mm width between the ab/ad servos)
+
+# Leg kinematics (CHAMP joint-to-joint distances -- NOT visual box sizes).
+THIGH_LENGTH = 107.5         # mm, hip-pitch axis -> knee axis. Precedent: mike4192/spotMicro
+                              # upper_leg_link_length 0.1075m (citation to be verified).
+SHIN_LENGTH = 130.0          # mm, knee axis -> foot contact point. Precedent: spotMicro
+                              # lower_leg_link_length 0.130m (citation to be verified).
+HIP_TO_FOOT_Y_TARGET = 55.0  # mm, target lateral offset ab/ad axis -> foot centreline, +-10mm.
+                              # Precedent: spotMicro hip_link_length 0.055m. Exact per-joint
+                              # offsets are the leg module's OUTPUT (leg_kinematics.json).
+# Required collision-free joint ranges (geometry only; the servo's own ~180 deg travel is
+# placed inside these by horn indexing at assembly):
+ABAD_RANGE_DEG = 25.0        # +-, hip ab/ad
+HIP_PITCH_RANGE_DEG = 90.0   # +-, hip pitch
+KNEE_RANGE_DEG = 150.0       # +-, knee (both fold directions geometrically free)
+
+# Envelope contract, in the LF HIP FRAME (origin at the LF hip point, body axes). Mirror
+# in X for hind legs and in Y for right legs. The leg module, in EVERY pose within the ranges
+# above, must stay out of BODY_BOX and NOSE_BOX and below LEG_MAX_Z. The chassis must stay
+# inside BODY_BOX + NOSE_BOX, or above LEG_MAX_Z (e.g. the LiDAR).
+#   BODY_BOX: X [-2*BASE_TO_HIP_X, 0], Y [-(BASE_TO_HIP_Y+BODY_MAX_HALF_W), BODY_MAX_HALF_W-BASE_TO_HIP_Y],
+#             Z [-BODY_MAX_BELOW_HIP, LEG_MAX_Z]
+#   NOSE_BOX (between the two shoulders, front and rear): X [0, NOSE_MAX_X],
+#             Y [-(BASE_TO_HIP_Y+NOSE_HALF_W), NOSE_HALF_W-BASE_TO_HIP_Y], Z [-NOSE_MAX_BELOW_HIP, LEG_MAX_Z]
+BODY_MAX_HALF_W = 65.0       # mm, body |Y| limit
+BODY_MAX_BELOW_HIP = 35.0    # mm, body may reach this far below the ab/ad axis
+LEG_MAX_Z = 60.0             # mm above the ab/ad axis; above this belongs to the chassis
+NOSE_HALF_W = 20.0           # mm, pan-tilt / sniffer arm zone between the shoulders
+NOSE_MAX_X = 60.0            # mm beyond the hip horn-face plane
+NOSE_MAX_BELOW_HIP = 120.0   # mm, sniffer arm deployed reach
+
+# Actuators: 12 leg servos, standard DS32xx case. DS3218 datasheet: 40 x 20 x 40.5mm body,
+# 49.5mm hole spacing, 54.5mm tab span, shaft 10mm from one end, tab underside 27.7mm above
+# the base (drawing read -- verify). DS3225 (25kg-cm) / DS3235 (35kg-cm) share the case.
+LEG_SERVO = "DS3225"         # default; final pick by check_mechanics.py torque margin
+SERVO_BODY_L = 40.0          # mm
+SERVO_BODY_W = 20.0          # mm
+SERVO_BODY_H = 40.5          # mm, base to top of case (excl. spline)
+SERVO_TAB_SPACING = 49.5     # mm, hole-to-hole
+SERVO_TAB_SPAN = 54.5        # mm, tab tip to tab tip
+SERVO_TAB_HOLE_DIA = 4.2     # mm, M4 clearance (DS3218 listing: M4 bolts)
+SERVO_SHAFT_OFFSET = 10.0    # mm, shaft axis to nearest body end
+SERVO_TAB_HEIGHT = 27.7      # mm, base to tab underside (ASSUMPTION, drawing read)
+# Torque design rule: static worst-case joint torque <= 0.4 x servo stall torque.
+SERVO_DUTY_FACTOR = 0.4
+
+# CHAMP gait targets (the config package's gait.yaml)
+GAIT_NOMINAL_HEIGHT = 190.0  # mm, hip axis to ground
+GAIT_SWING_HEIGHT = 30.0     # mm
+GAIT_MAX_VEL_X = 0.25        # m/s
+GAIT_MAX_VEL_Y = 0.12        # m/s
+GAIT_MAX_ANG_Z = 0.8         # rad/s
+GAIT_STANCE_DURATION = 0.25  # s
+MASS_TARGET_KG = 2.6         # whole robot, incl. battery
+
+# ---- v2 legacy (500x290 CHAMP-stock scale) -- remove each once no script uses it ---------
+UPPER_LEG_LENGTH = 190.5     # mm, upper_leg_z_length = 0.1905m (CHAMP VISUAL box size)
+LOWER_LEG_LENGTH = 156.0     # mm, lower_leg_z_length = 0.156m (CHAMP VISUAL box size)
 
 HIP_X_LENGTH = 112.0         # mm, hip_x_length = 0.112m
 HIP_Y_LENGTH = 80.0          # mm, hip_y_length = 0.08m
@@ -21,13 +91,6 @@ HIP_Z_LENGTH = 130.0         # mm, hip_z_length = 0.130m
 BASE_X_LENGTH = 500.0        # mm, base_x_length = 0.5m
 BASE_Y_LENGTH = 290.0        # mm, base_y_length = 0.29m
 BASE_Z_LENGTH = 130.0        # mm, base_z_length = 0.130m
-
-# ---- Standard-size hobby servo envelope (MG996R / DS3218 share this footprint) --------
-SERVO_BODY_L = 40.5          # mm, along the leg's long axis
-SERVO_BODY_W = 20.2          # mm
-SERVO_BODY_H = 38.0          # mm, body height excluding mounting-tab flange
-SERVO_TAB_SPACING = 49.5     # mm, hole-to-hole on the standard mounting tabs
-SERVO_TAB_HOLE_DIA = 4.2     # mm, clears an M4 bolt/standard servo screw
 
 # ---- Knee bolt-circle interface shared by upper_leg (knee end) and lower_leg (top end) --
 KNEE_HORN_HOLE_DIA = 6.0     # mm, standard servo spline boss clearance at the knee joint

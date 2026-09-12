@@ -36,7 +36,7 @@ import Part
 import params
 from geometry_helpers import build_box_wall, wall_flange_hole_xy
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 
 WALL_HEIGHT = params.STANDOFF_HEIGHT   # spans the deck-to-deck gap exactly
 T = params.WALL_THICKNESS

@@ -85,7 +85,7 @@ if not any_clash:
     print("Clearance check: skid plate clears all 3 keepouts (hip mounts, battery bay, "
           "sensing-bay mount) -- confirmed geometrically, not assumed.")
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 doc.saveAs(f"{out_dir}/skid_plate.FCStd")
 Part.export([part], f"{out_dir}/skid_plate.step")
 Part.export([part], f"{out_dir}/skid_plate.stl")

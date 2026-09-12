@@ -25,7 +25,7 @@ import Part
 
 import params
 
-CAD = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+CAD = params.CAD_DIR
 TOL = 1.0   # mm^3, same sliver threshold as assemble_robot.py
 G = 9.81
 

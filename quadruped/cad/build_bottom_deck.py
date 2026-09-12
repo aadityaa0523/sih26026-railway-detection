@@ -136,7 +136,7 @@ print(f"CHASSIS V2: {THICKNESS:.0f}mm laser-cut sheet (5052 aluminium / acrylic,
       f"{len(wall_holes)} body-wall flange holes cut.")
 print("*** DRAFT SIZE -- 500x290mm footprint NOT yet confirmed final; no physical test-fit done. ***")
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 doc.saveAs(f"{out_dir}/bottom_deck.FCStd")
 Part.export([part], f"{out_dir}/bottom_deck.step")
 Part.export([part], f"{out_dir}/bottom_deck.stl")

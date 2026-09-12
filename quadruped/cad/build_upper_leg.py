@@ -76,7 +76,7 @@ print(f"UpperLegLink built OK. Bounding box (mm): "
       f"X={bbox.XLength:.1f} Y={bbox.YLength:.1f} Z={bbox.ZLength:.1f}")
 print(f"Volume: {bar.Volume:.0f} mm^3   Solid valid: {bar.isValid()}")
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 doc.saveAs(f"{out_dir}/upper_leg.FCStd")
 Part.export([part], f"{out_dir}/upper_leg.step")
 Part.export([part], f"{out_dir}/upper_leg.stl")

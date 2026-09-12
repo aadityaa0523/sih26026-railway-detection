@@ -280,7 +280,7 @@ print(f"Camera/thermal mast top: {THICKNESS + params.MAST_HEIGHT:.1f}mm above de
       f"fix -- see params.py). LiDAR pedestal top: {THICKNESS + params.LIDAR_PEDESTAL_HEIGHT:.1f}mm "
       f"above deck (real-outline plate, item 7).")
 
-out_dir = "C:/Users/Aadityaa/iqoo/quadruped/cad"
+out_dir = params.CAD_DIR
 doc.saveAs(f"{out_dir}/top_deck.FCStd")
 Part.export([part, lid_obj], f"{out_dir}/top_deck.step")
 Part.export([part, lid_obj], f"{out_dir}/top_deck.stl")
