@@ -27,8 +27,8 @@ switch (SWITCH_CUTOUT_W/H, cited, common small rocker-switch cutout). The FRONT 
 (facing the camera-mast overhang) carries vent slots for the inter-deck bay instead.
 
 Each panel's longest single dimension is checked against WALL_MAX_PRINTABLE_SPAN (a normal
-220x220mm printer bed) -- both WALL_SIDE_LENGTH=200mm and BULKHEAD_LENGTH=110mm are already
-under that cap, so no panel needs splitting.
+220x220mm printer bed) -- CHASSIS V3: both WALL_SIDE_LENGTH=120mm and BULKHEAD_LENGTH=64mm
+(resized for the smaller chassis, see params.py) are comfortably under that cap.
 """
 import FreeCAD as App
 import Part
@@ -58,13 +58,13 @@ left_wall, _ = build_box_wall(params.WALL_SIDE_LENGTH, WALL_HEIGHT, T, F, params
 mat = App.Matrix()
 mat.scale(1, -1, 1)
 left_wall.transformShape(mat)
-left_wall.translate(App.Vector(0, params.BASE_Y_LENGTH / 2.0, params.BODY_PLATE_THICKNESS))
+left_wall.translate(App.Vector(0, params.CHASSIS_WIDTH / 2.0, params.BODY_PLATE_THICKNESS))
 panels["LeftWall"] = left_wall
 
 right_wall, _ = build_box_wall(params.WALL_SIDE_LENGTH, WALL_HEIGHT, T, F, params.WALL_BOLT_DIA,
                                 params.WALL_HOLE_INSET)
 # -Y (right) edge: local +y=inward already maps to global +Y -- translate only, no mirror.
-right_wall.translate(App.Vector(0, -params.BASE_Y_LENGTH / 2.0, params.BODY_PLATE_THICKNESS))
+right_wall.translate(App.Vector(0, -params.CHASSIS_WIDTH / 2.0, params.BODY_PLATE_THICKNESS))
 panels["RightWall"] = right_wall
 
 # ---- 2 bulkheads (+-BULKHEAD_X, clear Y gap between hip footprints) ----
@@ -90,25 +90,24 @@ rear_bulkhead, _ = build_box_wall(params.BULKHEAD_LENGTH, WALL_HEIGHT, T, F, par
 rear_bulkhead.rotate(App.Vector(0, 0, 0), App.Vector(0, 0, 1), -90.0)
 rear_bulkhead.translate(App.Vector(-params.BULKHEAD_X, 0, params.BODY_PLATE_THICKNESS))
 # Rear bulkhead: E-stop + XT60 charge port + power switch, reachable from behind/above the
-# robot (faces the LiDAR/rear overhang, outside the LiDAR scan band -- all 3 sit well below
-# LIDAR_SCAN_BAND_MIN_ABOVE_BASE's global Z, see assemble_robot.py's own check). Spread along
-# Y (the bulkhead's own 110mm-long axis, plenty of room) rather than stacked in Z -- the
-# available Z band (WALL_HEIGHT=50mm) is too tight to stack an 18mm + 13mm + 22mm-dia
-# component without overlap; Y has 110mm to work with instead. All 3 at the SAME mid-height
-# Z so they read as one control panel.
-mid_z = params.BODY_PLATE_THICKNESS + WALL_HEIGHT / 2.0
-estop = Part.makeCylinder(params.ESTOP_CUTOUT_DIA / 2.0, T, App.Vector(-params.BULKHEAD_X, 0, mid_z),
+# robot (faces the LiDAR/rear overhang, outside the LiDAR scan band). CHASSIS V3: the
+# shorter BULKHEAD_LENGTH=64mm (was 110mm) no longer has room to spread all 3 along Y
+# without overlap, so they're stacked in Z instead (WALL_HEIGHT=70mm has plenty of room),
+# all centered at Y=0. Z positions chosen so each one's own payload.py ENVELOPE (not just
+# this cutout) clears the others -- must match build_payload.py's own Z positions exactly.
+ESTOP_Z = params.BODY_PLATE_THICKNESS + 20.0     # mm, CHASSIS V3 -- see build_payload.py.
+XT60_Z = ESTOP_Z + 25.0                          # mm, CHASSIS V3 -- above the E-stop envelope.
+SWITCH_Z = XT60_Z + 16.5                         # mm, CHASSIS V3 -- above the XT60 envelope.
+estop = Part.makeCylinder(params.ESTOP_CUTOUT_DIA / 2.0, T, App.Vector(-params.BULKHEAD_X, 0, ESTOP_Z),
                            App.Vector(1, 0, 0))
 rear_bulkhead = rear_bulkhead.cut(estop)
-xt60_y = -35.0   # mm, design choice
 xt60 = Part.makeBox(T, params.XT60_CUTOUT_W, params.XT60_CUTOUT_H,
-                     App.Vector(-params.BULKHEAD_X, xt60_y - params.XT60_CUTOUT_W / 2.0,
-                                mid_z - params.XT60_CUTOUT_H / 2.0))
+                     App.Vector(-params.BULKHEAD_X, -params.XT60_CUTOUT_W / 2.0,
+                                XT60_Z - params.XT60_CUTOUT_H / 2.0))
 rear_bulkhead = rear_bulkhead.cut(xt60)
-switch_y = 35.0   # mm, design choice
 switch = Part.makeBox(T, params.SWITCH_CUTOUT_W, params.SWITCH_CUTOUT_H,
-                       App.Vector(-params.BULKHEAD_X, switch_y - params.SWITCH_CUTOUT_W / 2.0,
-                                  mid_z - params.SWITCH_CUTOUT_H / 2.0))
+                       App.Vector(-params.BULKHEAD_X, -params.SWITCH_CUTOUT_W / 2.0,
+                                  SWITCH_Z - params.SWITCH_CUTOUT_H / 2.0))
 rear_bulkhead = rear_bulkhead.cut(switch)
 panels["RearBulkhead"] = rear_bulkhead
 
@@ -116,11 +115,11 @@ panels["RearBulkhead"] = rear_bulkhead
 # landed) must match geometry_helpers.wall_flange_hole_xy's shared list exactly, or the
 # decks would cut holes the walls don't have.
 shared = set(wall_flange_hole_xy(params.WALL_SIDE_LENGTH, params.BULKHEAD_LENGTH,
-                                  params.BULKHEAD_X, params.BASE_Y_LENGTH, params.WALL_HOLE_INSET,
+                                  params.BULKHEAD_X, params.CHASSIS_WIDTH, params.WALL_HOLE_INSET,
                                   T, F))
 inset_from_edge = T + F / 2.0
 expected = set()
-for y in (params.BASE_Y_LENGTH / 2.0 - inset_from_edge, -(params.BASE_Y_LENGTH / 2.0 - inset_from_edge)):
+for y in (params.CHASSIS_WIDTH / 2.0 - inset_from_edge, -(params.CHASSIS_WIDTH / 2.0 - inset_from_edge)):
     for x in (-params.WALL_SIDE_LENGTH / 2.0 + params.WALL_HOLE_INSET,
               params.WALL_SIDE_LENGTH / 2.0 - params.WALL_HOLE_INSET):
         expected.add((round(x, 3), round(y, 3)))

@@ -87,17 +87,86 @@ GAIT_MAX_ANG_Z = 0.8         # rad/s
 GAIT_STANCE_DURATION = 0.25  # s
 MASS_TARGET_KG = 2.6         # whole robot, incl. battery
 
-# ---- v2 legacy (500x290 CHAMP-stock scale) -- remove each once no script uses it ---------
-UPPER_LEG_LENGTH = 190.5     # mm, upper_leg_z_length = 0.1905m (CHAMP VISUAL box size)
-LOWER_LEG_LENGTH = 156.0     # mm, lower_leg_z_length = 0.156m (CHAMP VISUAL box size)
+# ==========================================================================================
+# CHASSIS V3 -- SpotMicro-scale resize (2026-09-12) against the V3 SPEC contract above.
+# geometry_helpers.chassis_envelope(HIP_AXIS_Z) / leg_zone(HIP_AXIS_Z) are the actual
+# contract check; every constant below is sized so every chassis solid built from it falls
+# inside chassis_envelope(HIP_AXIS_Z). See check_chassis.py for the real per-part check.
+# ==========================================================================================
+HIP_AXIS_Z = 32.0             # mm, height of the hip ab/ad axis above the bottom deck's own
+                                 # underside (global Z=0, unchanged convention). DESIGN CHOICE:
+                                 # BODY_MAX_BELOW_HIP=35mm above means the body-box floor sits
+                                 # at Z=HIP_AXIS_Z-35=-3mm -- 3mm below the deck underside, so
+                                 # the whole bottom deck (Z=0..3) sits inside the envelope with
+                                 # a 3mm margin, and a 3mm skid plate (below Z=0) exactly fills
+                                 # that margin down to the envelope's own floor, flush, no waste.
+                                 # LEG_MAX_Z=60mm above gives a Z=92mm ceiling for the whole
+                                 # restricted (X/Y-constrained) stack -- see build_bottom_deck.py.
 
-HIP_X_LENGTH = 112.0         # mm, hip_x_length = 0.112m
-HIP_Y_LENGTH = 80.0          # mm, hip_y_length = 0.08m
-HIP_Z_LENGTH = 130.0         # mm, hip_z_length = 0.130m
+DENSITY_ACRYLIC = 1.19e-3     # g/mm^3 (1.18-1.19 g/cm^3), cited -- cast/extruded acrylic (PMMA)
+                                 # standard published density. Prototype deck material (item 3);
+                                 # 5052 aluminium (DENSITY_AL5052 above) is the production upgrade,
+                                 # identical geometry.
 
-BASE_X_LENGTH = 500.0        # mm, base_x_length = 0.5m
-BASE_Y_LENGTH = 290.0        # mm, base_y_length = 0.29m
-BASE_Z_LENGTH = 130.0        # mm, base_z_length = 0.130m
+# ---- Chassis footprint -- matches the V3 SPEC's own main BODY_BOX exactly (design choice:
+# use the full allowed envelope rather than a smaller draft footprint inside it). ----
+CHASSIS_LENGTH = 2 * BASE_TO_HIP_X    # 220.0mm, BODY_BOX X extent (-110..110)
+CHASSIS_WIDTH = 2 * BODY_MAX_HALF_W   # 130.0mm, BODY_BOX Y extent (-65..65)
+
+# ---- Hip ab/ad servo mount (item 2) -- a printed housing bolted to the bottom deck only
+# (single-deck mount, a design choice: the housing's own 62mm height (Z=3..65) sits well
+# clear of the top deck at Z=73, so a second mounting face isn't structurally needed at this
+# small scale -- simpler than clamping into both decks). Servo lies on its side, shaft along
+# +-X through the hip point, so the servo's own H (case height, 40.5mm) axis becomes the
+# global shaft/X axis, its L (40mm, carries SERVO_SHAFT_OFFSET) axis becomes vertical (Z),
+# and its W (20mm) axis stays Y -- see build_abad_mount.py for the full derivation.
+ABAD_MOUNT_WALL = 2.5         # mm, design choice, printed PETG housing wall thickness
+                                 # (mass review trim: was 3.0mm; matches WALL_THICKNESS's own
+                                 # 3D-printed-PETG-wall precedent within 0.5mm).
+ABAD_MOUNT_INSET = 6.0        # mm, design choice, base-flange corner-bolt inset from its own
+                                 # footprint edge (same corner-inset convention used
+                                 # throughout this file, e.g. SKID_PLATE's own bolt inset).
+                                 # The housing's base flange (4 corner M4-clearance bolts,
+                                 # reusing SERVO_TAB_HOLE_DIA) is how it's "clamped ... via its
+                                 # 4 tab holes" -- a documented simplification of the servo's
+                                 # own real tab-ear geometry (not precisely modeled), same
+                                 # honest-simplification convention as the pan-tilt/sniffer
+                                 # servo pockets elsewhere in this project.
+ABAD_HORN_DIA = 18.0          # mm, ASSUMPTION -- typical 25T aluminium servo horn/arm disc
+                                 # diameter (no single official spec, "25T" names the spline
+                                 # tooth count, not a disc diameter); sized here to fit inside
+                                 # the servo case's own SERVO_BODY_W=20mm cross-section (the
+                                 # pocket build_abad_mount.py cuts), not the servo's own real
+                                 # spec -- see build_payload.py's own note on why it's modeled
+                                 # recessed flush against the case rather than protruding past
+                                 # the hip point (X=+-BASE_TO_HIP_X, the BODY_BOX/NOSE_BOX
+                                 # boundary, which NOSE_BOX's own narrow +-20mm Y channel does
+                                 # not reach at the hip points' own Y=+-BASE_TO_HIP_Y).
+ABAD_HORN_THICKNESS = 4.0     # mm, ASSUMPTION -- typical thin aluminium horn arm thickness.
+
+# ---- Servo rail power (item 4) -- 12x DS3225 (4 ab/ad here + 8 leg servos) need a real
+# high-current rail; the old UBEC_* below (Adafruit 1385, 5V/3A) is nowhere near enough
+# current and is repurposed as the Pi's OWN 5V/3A supply only (still accurate for that job).
+# HobbyWing UBEC-25A HV (3-18S): 25A continuous / 50A peak, output adjustable
+# 5.0/6.0/7.4/8.4V, 55 x 40.2 x 17.6mm -- real product, cited.
+SERVO_BEC_L = 55.0            # mm, cited.
+SERVO_BEC_W = 40.2            # mm, cited.
+SERVO_BEC_H = 17.6            # mm, cited.
+SERVO_BEC_CONTINUOUS_A = 25.0 # A, cited.
+SERVO_BEC_PEAK_A = 50.0       # A, cited.
+SERVO_BEC_OUTPUT_V = 6.0      # V, design choice -- set to the BEC's 6.0V tap (within its
+                                 # 5/6/7.4/8.4V adjustable range), inside DS3225's own
+                                 # 4.8-6.8V rated supply range (7.4V would exceed it).
+
+# DS3225 stall current -- cited, commonly documented across resellers (Amazon/AIFITLAB/52pi
+# listings), varies by MG/SG/PRO variant and voltage (2.9-5.8A reported); 3.2A (SG variant)
+# used here as a representative, not the lowest, figure.
+DS3225_STALL_CURRENT_A = 3.2  # A, cited.
+MASS_DS3225_G = 67.0          # g, cited, commonly published DS3225 weight across resellers.
+MASS_SERVO_BEC_G = 70.0       # g, ASSUMPTION -- typical mass for a ~55x40x18mm potted UBEC
+                                 # module of this class; not published on HobbyWing's own
+                                 # product page in this pass's search.
+MASS_ABAD_HORN_G = 3.0        # g, ASSUMPTION -- small aluminium servo horn/arm, typical mass.
 
 # ---- Knee bolt-circle interface shared by upper_leg (knee end) and lower_leg (top end) --
 KNEE_HORN_HOLE_DIA = 6.0     # mm, standard servo spline boss clearance at the knee joint
@@ -113,19 +182,16 @@ WALL = 4.0                   # mm
 # no ribs, no blind pockets. This SUPERSEDES the original 6.0mm-then-4.0mm plate+rib design
 # (see "6. Ribbed decks" below, kept for history) -- stiffness now comes from the box-section
 # body walls (item 5, build_body_walls.py) closing the inter-deck bay instead of ribs.
-BODY_PLATE_THICKNESS = 3.0   # mm, was 4.0mm (see above). BASE_Z_LENGTH=130mm above is still the
-                              # real CHAMP body block's full height / electronics clearance
-                              # envelope, not this sheet's own thickness.
+BODY_PLATE_THICKNESS = 3.0   # mm, was 4.0mm (see above), CHASSIS V3: now the V3 SPEC's own
+                              # BODY_MAX_BELOW_HIP/LEG_MAX_Z envelope (params.py's V3 SPEC
+                              # block) is the real electronics-clearance envelope, not a
+                              # separate CHAMP-stock body-block height constant.
 
 # Raspberry Pi 4 official mounting-hole spec: 58mm x 49mm rectangle, 2.7mm dia holes.
 # https://www.raspberrypi.com/documentation/computers/images/Mechanical-Drawing-4B.pdf
 PI4_MOUNT_X = 58.0            # mm
 PI4_MOUNT_Y = 49.0            # mm
 PI4_HOLE_DIA = 2.7            # mm
-
-# 4 corner through-bolts that mount a hip bracket down onto the body plate -- inset from
-# the hip bracket's own 112x80 footprint edge, M4 clearance (reuses SERVO_TAB_HOLE_DIA).
-HIP_MOUNT_INSET = 10.0       # mm
 
 # ---- Two-deck sandwich chassis: payload components (build_bottom_deck.py / build_top_deck.py) --
 # Bottom deck is a flat plate (draft, same as the old body plate); top deck sits above it
@@ -159,39 +225,36 @@ AMG8833_HOLE_DIA = 2.0       # mm, assumed M2 clearance -- Adafruit's product pa
 
 # Standoffs joining the two decks -- all design choices (no CHAMP/vendor spec applies to
 # a sandwich-chassis standoff height/position).
-STANDOFF_HEIGHT = 50.0       # mm, clears the 26.5mm battery plus wiring slack underneath
-                              # the top deck -- a design choice, not a sourced spec.
+STANDOFF_HEIGHT = 70.0       # mm, CHASSIS V3 (was 50.0mm): clears the ab/ad servo housing's
+                              # own top (Z=65, see ABAD_MOUNT_WALL block above) with margin
+                              # before the top deck's underside at Z=3+70=73mm.
 STANDOFF_HOLE_DIA = 3.4      # mm, M3 clearance -- standard hobby standoff hardware size.
-# STANDOFF_X/Y: the real interference check in assemble_robot.py found the original (150, 85)
-# placement put every standoff INSIDE a hip bracket's own 112x80mm footprint (each hip
-# bracket is centered at +-BASE_TO_HIP_X/Y, spanning +-HIP_X_LENGTH/2=+-56mm in X and
-# +-HIP_Y_LENGTH/2=+-40mm in Y -- an X-band of [119,231]mm on each side). Any
-# |STANDOFF_X| < 175-56=119mm clears ALL FOUR hip footprints' X-band at once regardless of
-# Y, so Y no longer needs to dodge anything -- kept at 85mm purely for a wide, symmetric
-# support spread under the top deck.
-STANDOFF_X = 100.0           # mm, was 150.0 -- now < 119mm, clear of every hip footprint
-                              # by construction, not just by re-running the check.
-STANDOFF_Y = 85.0            # mm, unchanged -- no longer a clearance constraint, see above.
+# STANDOFF_X/Y -- CHASSIS V3: the ab/ad mount housing occupies an X-band of
+# [BASE_TO_HIP_X-ABAD_MOUNT_WALL-SERVO_BODY_H, BASE_TO_HIP_X] = [66.5,110]mm on each side (see
+# ABAD_MOUNT_WALL block above); any |STANDOFF_X| < 66.5mm clears all 4 housings' X-band at
+# once regardless of Y, same "clear by construction" logic as the v2 fix this replaces.
+STANDOFF_X = 50.0            # mm, CHASSIS V3 (was 100.0) -- < 66.5mm, clear of every ab/ad
+                              # housing by construction.
+STANDOFF_Y = 45.0            # mm, CHASSIS V3 (was 85.0) -- within the new CHASSIS_WIDTH=130mm
+                              # body, a symmetric spread clear of the battery footprint too.
 
 # Battery bay (bottom deck, centered at plate origin for a low/central CG) -- design
 # choices: a shallow locating pocket sized to the battery's own footprint, plus 2
 # full-thickness strap slots (one at each end) for a hook-and-loop or zip-tie strap.
-BATTERY_BAY_POCKET_DEPTH = 2.0   # mm, SUPERSEDED (Chassis v2 item 4): the sheet deck is only
-                                   # BODY_PLATE_THICKNESS=3mm thick now, no blind pocket is cut
-                                   # any more (through-features only on a laser-cut sheet) --
-                                   # build_bottom_deck.py keeps only the 2 strap slots below.
-                                   # Constant kept for history/reference, no longer read.
 BATTERY_STRAP_SLOT_W = 6.0        # mm, slot width (along the battery's long/X axis).
 BATTERY_STRAP_SLOT_L = 20.0       # mm, slot length (along the battery's short/Y axis).
 
 # Narcotics-sensing-bay mount (bottom deck, front edge, underside-facing) -- the fan + 3x
 # MQ gas sensors + BME688 assembly's own CAD does not exist yet, so this is ONLY a
-# placeholder mounting pattern (4 corner screw holes), sized generously -- a documented
-# assumption pending the real sensing-head enclosure, not a real footprint.
-SENSING_BAY_L = 90.0             # mm
-SENSING_BAY_W = 60.0             # mm
+# placeholder mounting pattern (4 corner screw holes) -- a documented assumption pending the
+# real sensing-head enclosure, not a real footprint. CHASSIS V3: SHRUNK from 90x60mm (the v2
+# size, sized generously for an underside-facing bottom-deck mount) to fit the sniffer arm's
+# new nose-mounted tip position, which must stay inside NOSE_BOX's own +-20mm Y half-width --
+# still an explicit placeholder/ASSUMPTION, just resized to where it now has to live.
+SENSING_BAY_L = 28.0             # mm
+SENSING_BAY_W = 22.0             # mm
 SENSING_BAY_HOLE_DIA = 3.4       # mm, M3 clearance, consistent with the rest of the project.
-SENSING_BAY_HOLE_INSET = 10.0    # mm, corner holes inset from the bay footprint's own edge.
+SENSING_BAY_HOLE_INSET = 6.0     # mm, corner holes inset from the bay footprint's own edge.
 
 # Camera/thermal mast (top deck, front edge) -- design choices; the mast itself has no
 # sourced spec, only the two devices it carries (PICAM_*/AMG8833_* above) are sourced.
@@ -215,13 +278,16 @@ MAST_FACE_THICKNESS = 5.0    # mm, mounting-face plate thickness
 # mounting adapter -- https://community.robotshop.com/forum/t/hole-pattern-and-dimensions-for-rplidar-a1m8-usb-adapter-board/41996
 # -- which informs the hole COUNT/diameter here, not the spacing). Sized to fit within the
 # LiDAR's ~97mm base with margin.
-LIDAR_PEDESTAL_HEIGHT = 70.0      # mm, clearly taller than MAST_HEIGHT so the LiDAR's
-                                    # 360-degree scan plane clears the camera mast (even more
-                                    # true now MAST_HEIGHT dropped to 8mm, see above).
-LIDAR_RISER_DIA = 50.0            # mm, structural riser cylinder diameter.
-# LIDAR_TOP_DISC_DIA/THICKNESS SUPERSEDED by Chassis v2 item 7's real-outline plate
-# (LIDAR_PLATE_* below) -- kept here for history, no longer read by build_top_deck.py.
-LIDAR_TOP_DISC_DIA = 100.0        # mm, top mounting disc, ~= LIDAR_DIAMETER(97mm) + 3mm margin.
+LIDAR_PEDESTAL_HEIGHT = 75.0      # mm, CHASSIS V3 (was 70.0) -- raised so the LiDAR's own
+                                    # base (pedestal top) clears Z=HIP_AXIS_Z+LEG_MAX_Z=92mm
+                                    # (the restricted-zone ceiling) with margin, and the
+                                    # LIDAR_SCAN_BAND floor (30mm above that base) clears the
+                                    # pan-tilt head's neutral-pose top -- see check_chassis.py.
+LIDAR_RISER_DIA = 32.0            # mm, CHASSIS V3 (was 50.0) -- structural riser cylinder
+                                     # diameter, slimmed once mass review (check_chassis.py)
+                                     # showed the old 50mm-dia solid rod was the single
+                                     # heaviest printed part; still comfortably sized to
+                                     # carry the ~190g RPLiDAR A1 + its own top plate.
 LIDAR_TOP_DISC_THICKNESS = 8.0    # mm, top disc thickness (bolt holes are cut through this);
                                     # STILL USED as the new real-outline plate's thickness too.
 LIDAR_BOLT_CIRCLE_DIA = 50.0      # mm, ASSUMPTION -- see note above. SHRUNK from 75.0mm for
@@ -242,28 +308,10 @@ LIDAR_BOLT_HOLE_DIA = 2.9         # mm, M2.5 clearance -- see note above.
 # see quadruped/cad/README.md "Hip/deck interference fix" for the full reasoning (keeps the
 # CHAMP-matched hip height intact, and keeps the robot's overall height unchanged, which
 # matters for the PS's under-carriage/tunnel/coach clearance requirements).
-HIP_CLEARANCE_MARGIN = 3.0   # mm, per side -- fit tolerance around the 112x80mm hip
-                              # footprint so the bracket doesn't bind against the deck edge.
-# Extra one-sided margin added on top of HIP_CLEARANCE_MARGIN once HIP_ABDUCTION_DEG (below)
-# tilts the hip bracket -- the tilted footprint shifts laterally by roughly
-# HIP_Z_LENGTH_at_deck * sin(HIP_ABDUCTION_DEG) at the height the top deck cuts through the
-# bracket. Value below was arrived at the same way the original HIP_CLEARANCE_MARGIN /
-# STANDOFF_X fix was: computed, then CONFIRMED against assemble_robot.py's real
-# boolean-geometry interference check, not assumed.
-HIP_ABDUCTION_CLEARANCE_EXTRA = 12.0   # mm, design choice, see above.
-
-# A SECOND, separate clash was found and confirmed the same way (real assemble_robot.py
-# boolean check, then a diagnostic isolating exactly which two solids and which XYZ region
-# overlapped): the hip-abduction tilt swings each HIND hip bracket's own top-inner corner
-# (near its Z=130mm top, the tallest part of the block) INWARD by ~21mm at that height --
-# enough to reach into the LiDAR pedestal's own 100mm top mounting disc, which sits close
-# to the hind hip mounts by construction (REAR_X=-195mm vs. hind hip X=-175mm, only 20mm
-# nominal separation -- already the minimum the disc's own 100mm diameter and the deck's
-# rear edge allow, see build_top_deck.py). REMOVED for Chassis v2 item 7: the notched 100mm
-# disc is replaced by a plate that follows the LiDAR's own real (smaller, D-shaped) footprint
-# -- see LIDAR_PLATE_* below -- which the interference check (assemble_robot.py) confirms
-# clears the tilted hind hip brackets WITHOUT needing these notches at all (deleted per this
-# file's own convention of removing a param once it's confirmed unused, not before).
+# (v2's static hip-abduction-tilt clearance fix lived here; CHASSIS V3 replaces that whole
+# static-tilt hack with a real powered ab/ad joint -- build_abad_mount.py -- so the deck no
+# longer needs a hip pass-through pocket or a tilt-clearance margin at all, see
+# build_top_deck.py's own module docstring.)
 
 # ==========================================================================================
 # 8 real-quadruped-precedent improvements added after the first interference-free pass.
@@ -271,14 +319,12 @@ HIP_ABDUCTION_CLEARANCE_EXTRA = 12.0   # mm, design choice, see above.
 # design choice/assumption -- same convention as every constant above.
 # ==========================================================================================
 
-# ---- 1. Hip abduction/adduction angle (assemble_robot.py placement only, see its docstring) --
-# Real quadrupeds (Spot, ANYmal, Unitree) use a powered hip ab/ad joint for sprawl stability.
-# CHAMP's stock config has no such joint, so this is implemented as a STATIC mounting tilt of
-# the whole hip-bracket-and-leg unit, NOT a new powered DOF -- an honest simplification, not
-# an active joint. 10 degrees is a DESIGN CHOICE (not sourced): modest, since real
-# quadrupeds' ab/ad range is typically small (a few to ~15 degrees), enough to add sprawl
-# without turning the mammalian trot into a sprawling gait.
-HIP_ABDUCTION_DEG = 10.0
+# ---- 1. Hip abduction/adduction (SUPERSEDED by CHASSIS V3) --------------------------------
+# v2 implemented ab/ad as a STATIC mounting tilt (10deg, not a powered joint) since CHAMP's
+# stock config had none. CHASSIS V3 replaces this entirely with a real POWERED ab/ad joint
+# (build_abad_mount.py, a DS3225 per hip) -- real quadrupeds (Spot, ANYmal, Unitree) use
+# exactly this, and it's what the V3 SPEC contract (params.py) itself is built around, so the
+# old static-tilt constant is gone, not just unused.
 
 # ---- 2. Dust bellows/gaiters + top-deck lid --------------------------------------------
 # Bellows/gaiters are a BOUGHT or MOLDED rubber/silicone part (like the foot cap below),
@@ -332,25 +378,44 @@ PANTILT_TILT_RANGE_DEG = 30.0    # deg, demonstration tilt-down angle for the "e
 
 # Sniffer arm (narcotics-sensing head, dip + swing) -- design choices, bolts to the bottom
 # deck's EXISTING sensing-bay hole pattern (SENSING_BAY_L/W, already in params.py above --
-# reused directly as the arm's base footprint so it actually lines up with the deck's
-# already-cut holes, not a new mismatched pattern). Same "static neutral + extended pose"
-# limitation as the pan-tilt head.
+# reused directly as the mount boom's own bolt-hole footprint (CHASSIS V3: relocated to a
+# nose-mounted boom, see the SNIFFER_MOUNT_* block below, but keeping the same hole pattern
+# name/size). Same "static stowed + deployed pose" limitation as the pan-tilt head.
 SNIFFER_BASE_T = 8.0         # mm, base-bracket plate thickness.
-SNIFFER_LINK_LENGTH = 50.0   # mm, dip-servo-axis to swing-servo-axis link length -- longer
-                              # than the pan-tilt link so the head can reach down toward a
-                              # target instead of just aiming in place.
-SNIFFER_DIP_RANGE_DEG = 60.0     # deg, demonstration "lowered toward target" angle.
-SNIFFER_SWING_RANGE_DEG = 30.0   # deg, demonstration swing angle.
+SNIFFER_LINK_LENGTH = 64.0   # mm, CHASSIS V3 (was 50.0) -- dip-pivot to swing-pivot link
+                              # length, sized so a straight-down DEPLOYED sweep reaches
+                              # >=100mm below the hip axis from SNIFFER_MOUNT_Z (confirmed by
+                              # check_chassis.py, not assumed).
+SNIFFER_SWING_RANGE_DEG = 30.0   # deg, demonstration swing angle (DEPLOYED pose only).
+
+# CHASSIS V3: mount point + stowed/deployed dip angles (build_sniffer_arm.py). The arm's
+# base bolts to a boom cantilevered forward off the bottom deck's front edge, ending at this
+# pivot point -- chosen INSIDE NOSE_BOX's own X-range (110-170mm) with margin from both
+# edges, so a purely VERTICAL dip sweep (straight up = stowed, straight down = deployed)
+# never crosses the BODY_BOX/NOSE_BOX boundary at all (X stays ~constant throughout) --
+# much simpler than angling across that boundary. NOSE_BOX's own Z range (-88 to 92mm) is
+# generous enough that "straight up" clears well above the body's own underside and
+# "straight down" reaches past the 100mm-below-hip-axis requirement with margin.
+SNIFFER_MOUNT_X = 130.0          # mm, design choice -- well inside NOSE_BOX's 110-170mm
+                                    # X-range.
+SNIFFER_MOUNT_Y = 0.0            # mm, design choice -- centered (nose box Y is only +-20mm).
+SNIFFER_MOUNT_Z = 10.0           # mm, design choice -- low, just above the bottom deck.
+SNIFFER_STOWED_DIP_DEG = 0.0     # deg, design choice -- arm points straight UP (+Z) from the
+                                    # pivot; tip ends up well above Z=0 (confirmed by
+                                    # check_chassis.py, not assumed).
+SNIFFER_DEPLOYED_DIP_DEG = 180.0 # deg, design choice -- arm points straight DOWN (-Z); tip
+                                    # reaches >=100mm below the hip axis (confirmed by
+                                    # check_chassis.py).
 
 # ---- 5. Skid plate ------------------------------------------------------------------------
 # UHMW or HDPE -- a design choice, but a real, appropriate one: both are standard low-friction,
 # high-wear-resistance materials used for ground-contact skid plates on RC crawlers/rovers.
 SKID_PLATE_THICKNESS = 3.0   # mm, within the requested 2-3mm range.
-SKID_PLATE_L = 80.0          # mm, sized (with margin, confirmed by build_skid_plate.py's own
-                              # geometric check) to the clear gap between the battery bay and
-                              # the sensing-bay mount footprints.
-SKID_PLATE_W = 100.0         # mm, sized (with margin, confirmed the same way) to the clear
-                              # gap inside the two hip-mount Y-bands.
+SKID_PLATE_L = 160.0         # mm, CHASSIS V3 (was 80.0) -- mounts BELOW the deck (Z<0), so
+                              # it has no interference constraint from the above-deck mounts;
+                              # sized generously within BODY_BOX's own X range (+-110mm).
+SKID_PLATE_W = 110.0         # mm, CHASSIS V3 (was 100.0) -- sized within BODY_BOX's own Y
+                              # range (+-65mm), see above.
 SKID_PLATE_HOLE_DIA = 3.4    # mm, M3 clearance, consistent with the rest of the project.
 
 # ---- 6. Ribbed decks (structural stiffening) -- SUPERSEDED by Chassis v2 item 4/5 ----------
@@ -359,10 +424,9 @@ SKID_PLATE_HOLE_DIA = 3.4    # mm, M3 clearance, consistent with the rest of the
 # SUPERSEDED: a laser-cut sheet deck (Chassis v2 item 4) cannot carry printed ribs at all, so
 # build_bottom_deck.py/build_top_deck.py no longer call geometry_helpers.build_deck_ribs --
 # the same stiffening GOAL is now met by the box-section body walls (item 5,
-# build_body_walls.py) closing the inter-deck bay instead. Constants + the helper function
-# kept for history, not deleted (not currently called anywhere).
-RIB_WIDTH = 3.0              # mm
-RIB_HEIGHT = 10.0            # mm
+# build_body_walls.py) closing the inter-deck bay instead. The helper function itself is
+# kept for history (not currently called anywhere); its own RIB_WIDTH/RIB_HEIGHT constants
+# are deleted (CHASSIS V3 cleanup, confirmed unused).
 
 # ---- 7. Cable routing channels -------------------------------------------------------------
 # Shallow groove along each leg link, sized for a typical 3-4 servo signal wire bundle --
@@ -376,10 +440,9 @@ CABLE_CHANNEL_END_MARGIN = 25.0  # mm, kept clear of each link's own servo pocke
 # done). Includes one flat area sized for an RPF/security branding decal.
 # SUPERSEDED: build_shell_panels.py's two cosmetic, non-structural side panels are replaced by
 # build_body_walls.py's structural box-section walls/bulkheads (item 5) -- DECAL_W/H are
-# REUSED there (same flat decal area requirement), SHELL_PANEL_THICKNESS is no longer read
-# (the new walls use WALL_THICKNESS below instead). build_shell_panels.py itself is left in
-# place (not deleted) but no longer called from assemble_robot.py or the README rebuild list.
-SHELL_PANEL_THICKNESS = 2.0  # mm, thin cosmetic cover, not structural. Superseded, see above.
+# REUSED there (same flat decal area requirement); the new walls use WALL_THICKNESS instead
+# of a separate cosmetic-panel thickness. build_shell_panels.py itself is deleted (CHASSIS
+# V3 cleanup -- no longer called from anywhere, git history keeps it).
 DECAL_W = 80.0                # mm, flat branding-decal area width. Still used (item 5).
 DECAL_H = 40.0                # mm, flat branding-decal area height. Still used (item 5).
 
@@ -487,20 +550,17 @@ SERVO_HORN_FLANGE_HEIGHT = 4.0   # mm, ASSUMPTION -- see above.
 # ---- Item 5: Box-section body walls/bulkheads -------------------------------------------------
 # Layout shared by build_body_walls.py AND both deck scripts (which must cut matching flange
 # bolt holes) -- kept here, not recomputed independently in 3 files, so they can't drift apart.
-WALL_SIDE_LENGTH = 200.0       # mm, design choice -- same span the old shell panels used
-                                  # (PANEL_L), already confirmed clear of both hip footprints'
-                                  # X-extent ([119,231]mm each side) by the existing
-                                  # interference check.
-BULKHEAD_LENGTH = 110.0        # mm, design choice -- comfortably inside the clear Y gap
-                                  # between the left/right hip footprints' Y-extent
-                                  # ([65,145]mm each side).
-BULKHEAD_X = 100.0             # mm, design choice -- front bulkhead at +BULKHEAD_X (facing
-                                  # the front overhang where the camera mast sits), rear
-                                  # bulkhead at -BULKHEAD_X (facing the rear overhang where the
-                                  # LiDAR pedestal sits); matches WALL_SIDE_LENGTH/2 so the two
-                                  # side walls' own ends line up with the two bulkheads.
-WALL_HOLE_INSET = 25.0         # mm, design choice -- flange bolt hole inset from each panel's
-                                  # own end.
+WALL_SIDE_LENGTH = 120.0        # mm, CHASSIS V3 (was 200.0) -- spans X [-60,60], inside the
+                                  # clear zone between the 4 ab/ad housings' X-bands
+                                  # ([66.5,110]mm each side, see ABAD_MOUNT_WALL block above).
+BULKHEAD_LENGTH = 64.0          # mm, CHASSIS V3 (was 110.0) -- spans Y [-32,32], inside the
+                                  # clear zone between the ab/ad housings' Y-bands ([37,63]mm
+                                  # each side).
+BULKHEAD_X = 60.0               # mm, CHASSIS V3 (was 100.0) -- matches WALL_SIDE_LENGTH/2 so
+                                  # the two side walls' own ends line up with the two bulkheads
+                                  # (the 4 corners, where the ab/ad housings sit, stay open).
+WALL_HOLE_INSET = 18.0          # mm, CHASSIS V3 (was 25.0) -- flange bolt hole inset from each
+                                  # panel's own end, resized for the shorter V3 panels.
 WALL_THICKNESS = 3.0           # mm, design choice -- 3D-printed PETG wall thickness.
 WALL_FLANGE = 10.0             # mm, design choice -- top/bottom flange width carrying the M3
                                   # bolts into the decks.
@@ -551,10 +611,13 @@ MPU6050_HOLE_DIA = 2.0          # mm, ASSUMPTION -- M2 clearance, typical for th
                                      # board class; no single official spec across resellers
                                      # (many GY-521 boards ship with a single mounting hole,
                                      # modeled here as one hole, not a 4-corner pattern).
-IMU_MOUNT_X = 40.0              # mm, design choice -- within 60mm of the body's XY center
-                                     # (placement rule, item 9), on the bottom deck, clear of
-                                     # the battery bay and its strap slots.
-IMU_MOUNT_Y = 40.0              # mm, design choice -- see above.
+IMU_MOUNT_X = 13.0              # mm, CHASSIS V3 (was 40.0) -- within 30mm of the body's XY
+                                     # center (tightened V3 SPEC placement rule, was 60mm).
+IMU_MOUNT_Y = 26.0              # mm, CHASSIS V3 (was 40.0) -- clear of the battery bay's own
+                                     # BOX footprint (board half-width 8mm + battery
+                                     # half-width 17mm = 25mm minimum center spacing, 26mm
+                                     # used for a 1mm margin). sqrt(13^2+26^2)=29.1mm, inside
+                                     # the 30mm rule.
 
 # UBEC 5V/3A step-down module (e.g. Adafruit product 1385) -- a real, commonly-stocked part,
 # but its exact PCB envelope isn't published on the vendor's own product page; sized here to
