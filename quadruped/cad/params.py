@@ -33,6 +33,8 @@ THIGH_LENGTH = 107.5         # mm, hip-pitch axis -> knee axis. Precedent: mike4
 SHIN_LENGTH = 130.0          # mm, knee axis -> foot contact point. Precedent: spotMicro
                               # lower_leg_link_length 0.130m (citation to be verified).
 HIP_TO_FOOT_Y_TARGET = 55.0  # mm, target lateral offset ab/ad axis -> foot centreline, +-10mm.
+HIP_TO_FOOT_Y_MAX = 75.0     # mm, HARD limit: ab/ad static torque (m*g/2)*offset must stay
+                              # <= SERVO_DUTY_FACTOR x DS3225 stall at MASS_TARGET_KG.
                               # Precedent: spotMicro hip_link_length 0.055m. Exact per-joint
                               # offsets are the leg module's OUTPUT (leg_kinematics.json).
 # Required collision-free joint ranges (geometry only; the servo's own ~180 deg travel is
@@ -51,7 +53,12 @@ KNEE_RANGE_DEG = 150.0       # +-, knee (both fold directions geometrically free
 #             Y [-(BASE_TO_HIP_Y+NOSE_HALF_W), NOSE_HALF_W-BASE_TO_HIP_Y], Z [-NOSE_MAX_BELOW_HIP, LEG_MAX_Z]
 BODY_MAX_HALF_W = 65.0       # mm, body |Y| limit
 BODY_MAX_BELOW_HIP = 35.0    # mm, body may reach this far below the ab/ad axis
-LEG_MAX_Z = 60.0             # mm above the ab/ad axis; above this belongs to the chassis
+LEG_MAX_Z = 60.0             # mm above the ab/ad axis; above this belongs to the chassis.
+                              # Applies to GAIT poses only (IK for foot x in [-80,80], z in
+                              # [-210,-140] below the hip-pitch axis, ab/ad +-25, both knee
+                              # directions) -- a full-range pose like hip -90/knee -90 puts the
+                              # foot 130mm above the hip and no gait does that. The full joint
+                              # ranges above must still clear the chassis envelope.
 NOSE_HALF_W = 20.0           # mm, pan-tilt / sniffer arm zone between the shoulders
 NOSE_MAX_X = 60.0            # mm beyond the hip horn-face plane
 NOSE_MAX_BELOW_HIP = 120.0   # mm, sniffer arm deployed reach
