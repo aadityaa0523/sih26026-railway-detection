@@ -1,0 +1,10 @@
+
+=== Verification ===
+Mirrors: right legs = mirror in Y, hind legs = mirror in X. This module's own sweep uses SYMMETRIC +-25/+-90/+-150 ranges, so the identical geometry (mirrored) gives identical clearance numbers for all 4 legs -- one LF sweep covers all of them.
+Swept 105 poses (ab/ad x hip_pitch x knee = 3x5x7).
+Worst self-collision, NON-adjacent (shoulder vs shin, must be ~0): 0.000 mm^3 at pose None
+Worst self-collision, ADJACENT (shoulder-thigh / thigh-shin, <=1mm^3 allowed): 0.000 mm^3
+Worst envelope overlap (leg module vs chassis_envelope, must be <=1mm^3): 0.000 mm^3 at pose None
+Worst Z reached (hip frame, must be <= LEG_MAX_Z=60.0mm): 165.65mm at pose (25, -90, -90)
+
+RESULT: FAIL

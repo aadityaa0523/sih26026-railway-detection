@@ -1,0 +1,86 @@
+{
+  "frame": "LF hip frame, mm, zero pose (all joints 0, leg straight down)",
+  "joints": {
+    "abad": {
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ]
+    },
+    "hip_pitch": {
+      "origin": [
+        0.0,
+        55.0,
+        0.0
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ]
+    },
+    "knee": {
+      "origin": [
+        0.0,
+        55.0,
+        -107.5
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ]
+    }
+  },
+  "foot": [
+    0.0,
+    55.0,
+    -237.5
+  ],
+  "hip_to_foot_y_achieved_mm": 55.0,
+  "bodies": {
+    "shoulder": {
+      "step_files": [
+        "leg_shoulder.step"
+      ],
+      "carries_servo": "hip_pitch (DS3225)",
+      "mass_g": 129.3,
+      "com_mm": [
+        20.01,
+        24.19,
+        -0.0
+      ]
+    },
+    "thigh": {
+      "step_files": [
+        "leg_thigh.step"
+      ],
+      "carries_servo": "knee (DS3225)",
+      "mass_g": 138.4,
+      "com_mm": [
+        20.0,
+        77.58,
+        -87.8
+      ]
+    },
+    "shin": {
+      "step_files": [
+        "leg_shin.step"
+      ],
+      "carries_servo": null,
+      "mass_g": 38.2,
+      "com_mm": [
+        20.0,
+        111.07,
+        -159.43
+      ]
+    }
+  },
+  "bought_parts_step_file": "leg_bought.step"
+}
