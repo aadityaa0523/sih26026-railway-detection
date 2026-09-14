@@ -1,0 +1,33 @@
+# sih_quadruped gait config. Same ros__parameters/gait: shape as stock
+# chvmp/champ `ros2` branch champ_config/config/gait/gait.yaml (docs/champ-research.md #3.1).
+# Values below come from quadruped/cad/params.py "V3 SPEC" block except where noted.
+/**:
+  ros__parameters:
+    gait:
+      # knee_orientation: 2-char string, char[0] = front legs, char[1] = hind legs
+      # (champ/include/champ/quadruped_base/quadruped_base.h:119,123 -- legs[] order is
+      # lf,rf,lh,rh so `i<2` is the two front legs). Each char is decoded by
+      # getKneeDirection() (quadruped_base.h:44-53): '>' -> knee_direction -1, '<' -> +1,
+      # anything else -> -1 (default). knee_direction feeds the 2-link IK's elbow solution
+      # (champ/include/champ/kinematics/kinematics.h:110 lower_leg_joint = knee_direction *
+      # acos(...), and the quadrant flip at kinematics.h:117-124) -- it picks which of the
+      # two elbow solutions the knee uses, i.e. which way the knee folds.
+      # ">>" is the stock champ_config default for the *stock demo robot itself*, which
+      # champ-research.md #3.1 describes as "MIT-Mini-Cheetah-styled proportions" -- i.e.
+      # the one CHAMP robot whose knee orientation is already documented as matching the
+      # Spot/Mini-Cheetah rearward-knee style this task asks for. Both chars are the same
+      # ('>' front, '>' hind) so knee_direction is -1 for all four legs: a uniform elbow
+      # solution front and hind, which is the rearward-knee convention (as opposed to "><"
+      # or "<>", which would fold front and hind knees toward each other/apart -- a
+      # sprawled, not rearward, stance). Source: champ_config/config/gait/gait.yaml:4.
+      knee_orientation : ">>"
+      pantograph_leg : false
+      odom_scaler: 0.9      # unspecified by V3 SPEC; kept at the stock champ_config default
+      max_linear_velocity_x : 0.25   # m/s, params.py GAIT_MAX_VEL_X
+      max_linear_velocity_y : 0.12   # m/s, params.py GAIT_MAX_VEL_Y
+      max_angular_velocity_z : 0.8   # rad/s, params.py GAIT_MAX_ANG_Z
+      com_x_translation: 0.0         # m, PLACEHOLDER per task spec (no CAD CoM data yet)
+      swing_height : 0.03            # m, params.py GAIT_SWING_HEIGHT = 30.0mm
+      stance_depth : 0.00            # m, unspecified by V3 SPEC; kept at stock default
+      stance_duration : 0.25         # s, params.py GAIT_STANCE_DURATION
+      nominal_height : 0.19          # m, params.py GAIT_NOMINAL_HEIGHT = 190.0mm

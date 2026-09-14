@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>sih_quadruped</name>
+  <version>0.1.0</version>
+  <description>SIH26026 12-DOF SpotMicro-scale quadruped: CHAMP config + primitive-geometry URDF for the Gazebo Classic stand/walk torque smoke test (V3 SPEC). Not a CAD package -- see quadruped/cad/ for that.</description>
+
+  <maintainer email="sih2026kav@gmail.com">SIH26026 team</maintainer>
+  <author>SIH26026 team</author>
+
+  <license>BSD</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>launch_ros</build_depend>
+
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>champ_description</exec_depend>
+  <exec_depend>champ_bringup</exec_depend>
+  <exec_depend>champ_base</exec_depend>
+  <exec_depend>champ_gazebo</exec_depend>
+  <exec_depend>champ_msgs</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>gazebo_ros_pkgs</exec_depend>
+  <exec_depend>gazebo_plugins</exec_depend>
+  <exec_depend>gazebo_ros2_control</exec_depend>
+  <exec_depend>ros2_control</exec_depend>
+  <exec_depend>ros2_controllers</exec_depend>
+  <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>joint_trajectory_controller</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

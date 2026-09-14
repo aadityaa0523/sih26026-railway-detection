@@ -1,0 +1,6 @@
+# sih_quadruped Gazebo Classic ROS-bridge params. Identical to stock chvmp/champ `ros2`
+# branch champ_gazebo/config/gazebo.yaml (docs/champ-research.md #6.1) -- passed to
+# gzserver via --ros-args --params-file.
+gazebo:
+  ros__parameters:
+    publish_rate: 200.0

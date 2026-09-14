@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+sih_quadruped top-level URDF. Modeled on chvmp/champ `ros2` branch
+champ_description/urdf/champ.urdf.xacro (docs/champ-research.md #6.1): base_link + 4x
+champ_leg + the gazebo_ros2_control plugin block pointing at this package's ros_control.yaml.
+Primitive box geometry only (no meshes), per the task spec. No accessories.urdf.xacro
+equivalent (no lidar/camera/IMU) since none were asked for; add one later the same way stock
+does (xacro:include + a macro call) if/when a sensor payload is specified.
+-->
+<robot name="sih_quadruped" xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:include filename="$(find sih_quadruped)/urdf/properties.urdf.xacro" />
+    <xacro:include filename="$(find sih_quadruped)/urdf/leg.urdf.xacro" />
+
+    <link name="base_link">
+        <xacro:box_inertial mass="${base_mass}" x="${base_x_length}" y="${base_y_length}" z="${base_z_length}" />
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry><box size="${base_x_length} ${base_y_length} ${base_z_length}" /></geometry>
+        </collision>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry><box size="${base_x_length} ${base_y_length} ${base_z_length}" /></geometry>
+            <material name="black" />
+        </visual>
+    </link>
+    <gazebo reference="base_link">
+        <material>Gazebo/FlatBlack</material>
+    </gazebo>
+
+    <xacro:champ_leg leg="lf"/>
+    <xacro:champ_leg leg="lh"/>
+    <xacro:champ_leg leg="rf"/>
+    <xacro:champ_leg leg="rh"/>
+
+    <!-- Ground-truth base pose for the stand/walk test harness (matches stock
+         champ_description/urdf/champ.urdf.xacro's p3d plugin: publishes nav_msgs/Odometry
+         on /odom/ground_truth, independent of CHAMP's own estimated /odom). -->
+    <gazebo>
+        <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+            <ros>
+                <argument>odom:=odom/ground_truth</argument>
+            </ros>
+            <body_name>base_link</body_name>
+            <frame_name>world</frame_name>
+            <update_rate>50.0</update_rate>
+            <xyz_offset>0 0 0</xyz_offset>
+            <rpy_offset>0 0 0</rpy_offset>
+            <gaussian_noise>0.0</gaussian_noise>
+        </plugin>
+    </gazebo>
+
+    <gazebo>
+        <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+            <parameters>$(find sih_quadruped)/config/ros_control/ros_control.yaml</parameters>
+        </plugin>
+    </gazebo>
+</robot>

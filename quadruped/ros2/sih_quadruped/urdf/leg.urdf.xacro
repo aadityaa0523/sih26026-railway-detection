@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<!--
+sih_quadruped leg macro. Modeled on chvmp/champ `ros2` branch
+champ_description/urdf/leg.urdf.xacro (docs/champ-research.md #3.1/#6.1): same link/joint
+names (<leg>_hip_link/joint, <leg>_upper_leg_link/joint, <leg>_lower_leg_link/joint,
+<leg>_foot_link/joint), same hip-X / upper-Y / lower-Y axis convention, same per-joint
+<ros2_control> effort/position/velocity interface block, same lower-leg Gazebo friction
+block. Differences from stock: primitive <box> geometry instead of meshes (task spec), and
+the hip->upper_leg / upper_leg->lower_leg joint origins carry an extra x (resp. y) component
+(see properties.urdf.xacro) because this leg's real offsets aren't purely axis-aligned like
+stock's mini-cheetah-proportioned leg.
+
+No URDF <sensor> tag for foot contact: stock CHAMP does foot-contact sensing via a separate
+ROS node (champ_gazebo/src/contact_sensor.cpp) that subscribes to Gazebo's own contact
+manager topic (~/physics/contacts) using the foot link names from links.yaml; it is not a
+per-foot <gazebo><sensor> block in the URDF. That node is reused as-is (not reimplemented)
+from launch/gazebo.launch.py.
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <material name="black"><color rgba="0.15 0.15 0.15 1.0" /></material>
+
+    <!-- Shared box-inertia macro (avoids repeating the (1/12)*m*(a^2+b^2) formula 3x per link). -->
+    <xacro:macro name="box_inertial" params="mass x y z ox:=0 oy:=0 oz:=0">
+        <inertial>
+            <origin xyz="${ox} ${oy} ${oz}" rpy="0 0 0" />
+            <mass value="${mass}" />
+            <inertia ixx="${(1/12) * mass * (y*y + z*z)}" ixy="0.0" ixz="0.0"
+                     iyy="${(1/12) * mass * (x*x + z*z)}" iyz="0.0"
+                     izz="${(1/12) * mass * (x*x + y*y)}" />
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="champ_leg" params="leg">
+
+        <!-- Mirror rule (same convention as stock): front (+x) / hind (-x); left (+y) / right (-y). -->
+        <xacro:if value="${leg == 'lf'}">
+            <xacro:property name="base_to_hip_xyz" value="${base_to_hip_x} ${base_to_hip_y} 0" />
+            <xacro:property name="hip_to_upper_leg_xyz" value="${hip_to_upper_leg_x} ${hip_to_upper_leg_y} 0" />
+            <xacro:property name="upper_leg_to_lower_leg_xyz" value="0 ${upper_leg_to_lower_leg_y} -${upper_leg_to_lower_leg_z}" />
+        </xacro:if>
+        <xacro:if value="${leg == 'lh'}">
+            <xacro:property name="base_to_hip_xyz" value="-${base_to_hip_x} ${base_to_hip_y} 0" />
+            <xacro:property name="hip_to_upper_leg_xyz" value="-${hip_to_upper_leg_x} ${hip_to_upper_leg_y} 0" />
+            <xacro:property name="upper_leg_to_lower_leg_xyz" value="0 ${upper_leg_to_lower_leg_y} -${upper_leg_to_lower_leg_z}" />
+        </xacro:if>
+        <xacro:if value="${leg == 'rf'}">
+            <xacro:property name="base_to_hip_xyz" value="${base_to_hip_x} -${base_to_hip_y} 0" />
+            <xacro:property name="hip_to_upper_leg_xyz" value="${hip_to_upper_leg_x} -${hip_to_upper_leg_y} 0" />
+            <xacro:property name="upper_leg_to_lower_leg_xyz" value="0 -${upper_leg_to_lower_leg_y} -${upper_leg_to_lower_leg_z}" />
+        </xacro:if>
+        <xacro:if value="${leg == 'rh'}">
+            <xacro:property name="base_to_hip_xyz" value="-${base_to_hip_x} -${base_to_hip_y} 0" />
+            <xacro:property name="hip_to_upper_leg_xyz" value="-${hip_to_upper_leg_x} -${hip_to_upper_leg_y} 0" />
+            <xacro:property name="upper_leg_to_lower_leg_xyz" value="0 -${upper_leg_to_lower_leg_y} -${upper_leg_to_lower_leg_z}" />
+        </xacro:if>
+
+        <link name="${leg}_hip_debug_link"/>
+
+        <link name="${leg}_hip_link">
+            <xacro:box_inertial mass="${hip_mass}" x="${hip_x_length}" y="${hip_y_length}" z="${hip_z_length}" />
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry><box size="${hip_x_length} ${hip_y_length} ${hip_z_length}" /></geometry>
+            </collision>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry><box size="${hip_x_length} ${hip_y_length} ${hip_z_length}" /></geometry>
+                <material name="black" />
+            </visual>
+        </link>
+        <gazebo reference="${leg}_hip_link">
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <link name="${leg}_upper_leg_link">
+            <xacro:box_inertial mass="${upper_leg_mass}" x="${upper_leg_x_length}" y="${upper_leg_y_length}" z="${upper_leg_z_length}"
+                                 ox="0" oy="${upper_leg_to_lower_leg_y/2}" oz="-${upper_leg_to_lower_leg_z/2}" />
+            <collision>
+                <origin xyz="0 ${upper_leg_to_lower_leg_y/2} -${upper_leg_to_lower_leg_z/2}" rpy="0 0 0" />
+                <geometry><box size="${upper_leg_x_length} ${upper_leg_y_length} ${upper_leg_z_length}" /></geometry>
+            </collision>
+            <visual>
+                <origin xyz="0 ${upper_leg_to_lower_leg_y/2} -${upper_leg_to_lower_leg_z/2}" rpy="0 0 0" />
+                <geometry><box size="${upper_leg_x_length} ${upper_leg_y_length} ${upper_leg_z_length}" /></geometry>
+                <material name="black" />
+            </visual>
+        </link>
+        <gazebo reference="${leg}_upper_leg_link">
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <link name="${leg}_lower_leg_link">
+            <xacro:box_inertial mass="${lower_leg_mass}" x="${lower_leg_x_length}" y="${lower_leg_y_length}" z="${lower_leg_z_length}"
+                                 ox="0" oy="0" oz="-${lower_leg_to_foot_z/2}" />
+            <collision>
+                <origin xyz="0 0 -${lower_leg_to_foot_z/2}" rpy="0 0 0" />
+                <geometry><box size="${lower_leg_x_length} ${lower_leg_y_length} ${lower_leg_z_length}" /></geometry>
+            </collision>
+            <visual>
+                <origin xyz="0 0 -${lower_leg_to_foot_z/2}" rpy="0 0 0" />
+                <geometry><box size="${lower_leg_x_length} ${lower_leg_y_length} ${lower_leg_z_length}" /></geometry>
+                <material name="black" />
+            </visual>
+        </link>
+        <gazebo reference="${leg}_lower_leg_link">
+            <!-- Same foot-ground contact stiffness/friction as stock champ_description/urdf/leg.urdf.xacro -->
+            <kp>10000000000.0</kp>
+            <kd>100.0</kd>
+            <mu1>0.8</mu1>
+            <mu2>0.8</mu2>
+            <minDepth>0.05</minDepth>
+            <material>Gazebo/FlatBlack</material>
+        </gazebo>
+
+        <link name="${leg}_foot_link" />
+
+        <joint name="${leg}_debug_joint" type="fixed">
+            <parent link="base_link" />
+            <child link="${leg}_hip_debug_link" />
+            <origin xyz="${base_to_hip_xyz}" rpy="0 0 0" />
+        </joint>
+
+        <joint name="${leg}_hip_joint" type="revolute">
+            <axis xyz="1 0 0" />
+            <limit effort="${leg_joint_effort}" lower="-${pi}" upper="${pi}" velocity="${leg_joint_velocity}" />
+            <parent link="base_link" />
+            <child link="${leg}_hip_link" />
+            <origin xyz="${base_to_hip_xyz}" rpy="0 0 0" />
+        </joint>
+
+        <joint name="${leg}_upper_leg_joint" type="revolute">
+            <axis xyz="0 1 0" />
+            <limit effort="${leg_joint_effort}" lower="-${pi}" upper="${pi}" velocity="${leg_joint_velocity}" />
+            <parent link="${leg}_hip_link" />
+            <child link="${leg}_upper_leg_link" />
+            <origin xyz="${hip_to_upper_leg_xyz}" rpy="0 0 0" />
+        </joint>
+
+        <joint name="${leg}_lower_leg_joint" type="revolute">
+            <axis xyz="0 1 0" />
+            <limit effort="${leg_joint_effort}" lower="-${pi}" upper="${pi}" velocity="${leg_joint_velocity}" />
+            <parent link="${leg}_upper_leg_link" />
+            <child link="${leg}_lower_leg_link" />
+            <origin xyz="${upper_leg_to_lower_leg_xyz}" rpy="0 0 0" />
+        </joint>
+
+        <joint name="${leg}_foot_joint" type="fixed">
+            <parent link="${leg}_lower_leg_link" />
+            <child link="${leg}_foot_link" />
+            <origin xyz="0 0 -${lower_leg_to_foot_z}" rpy="0 0 0" />
+        </joint>
+
+        <ros2_control name="${leg}" type="system">
+            <hardware>
+                <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+            </hardware>
+            <joint name="${leg}_hip_joint">
+                <command_interface name="effort"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="${leg}_upper_leg_joint">
+                <command_interface name="effort"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+            <joint name="${leg}_lower_leg_joint">
+                <command_interface name="effort"/>
+                <state_interface name="position"/>
+                <state_interface name="velocity"/>
+            </joint>
+        </ros2_control>
+    </xacro:macro>
+</robot>

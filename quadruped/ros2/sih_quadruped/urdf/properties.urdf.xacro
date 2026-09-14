@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+sih_quadruped properties: every geometry/mass/limit number used by the URDF, in one file,
+one xacro:property per real-world value, one comment per value stating where it came from.
+
+Modeled on chvmp/champ `ros2` branch champ_description/urdf/properties.urdf.xacro (see
+docs/champ-research.md #3.1), extended with an x-offset on the hip->upper_leg joint and a
+y-offset on the upper_leg->lower_leg joint that stock CHAMP's stock properties file doesn't
+need (stock's hip_to_upper_leg is y-only). champ's own IK (champ/include/champ/kinematics/
+kinematics.h) reads leg.upper_leg.x()/z() and leg.lower_leg.x()/z() directly off the URDF
+joint chain, so extra x/y components here are physically meaningful to the gait, not cosmetic.
+
+PLACEHOLDER NOTE (leg offsets): every x/y component below tagged PLACEHOLDER is a stand-in
+until the leg CAD agent publishes quadruped/cad/leg_kinematics.json. Swap these 4 properties
+for that file's real numbers when it lands; nothing else in this file, urdf/leg.urdf.xacro,
+or urdf/sih_quadruped.urdf.xacro needs to change:
+  hip_to_upper_leg_x, hip_to_upper_leg_y, upper_leg_to_lower_leg_y
+  (upper_leg_to_lower_leg_z and lower_leg_to_foot_z are NOT placeholders, they are the V3
+  SPEC contract lengths THIGH_LENGTH/SHIN_LENGTH, fixed independent of the leg's internal
+  routing/offset choices).
+-->
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- Base to hip (CHAMP <leg>_hip_joint origin).
+         quadruped/cad/params.py V3 SPEC: "HIP POINT = centre of the hip ab/ad servo's horn
+         face = CHAMP's <leg>_hip_joint origin." BASE_TO_HIP_X/Y are a fixed design contract,
+         NOT a placeholder: every other module (leg CAD, chassis CAD) is built against this
+         exact point. Mirrored +/- per leg in leg.urdf.xacro (front/hind in X, left/right in Y). -->
+    <xacro:property name="base_to_hip_x" value="0.110" /> <!-- m, params.py BASE_TO_HIP_X = 110.0mm -->
+    <xacro:property name="base_to_hip_y" value="0.050" /> <!-- m, params.py BASE_TO_HIP_Y = 50.0mm -->
+
+    <!-- Hip to upper leg (CHAMP <leg>_upper_leg_joint origin). PLACEHOLDER.
+         Task spec named a nonzero draft ("+25 front / -25 hind in x, +-30 in y, 0"), but the
+         Gazebo stand test (see README "IK reach margin") showed champ's own IK
+         (champ/include/champ/kinematics/kinematics.h: the "target_to_foot >=
+         abs(l1)+abs(l2)" reachability check, which on failure `return`s WITHOUT setting
+         lower_leg_joint/upper_leg_joint, a real upstream bug, not ours, feeding NaN
+         effort into ros2_control and exploding the physics) is only about 12mm (about 5%)
+         inside its reach envelope at GAIT_NOMINAL_HEIGHT=0.19m even at best case, because
+         THIGH_LENGTH+SHIN_LENGTH=237.5mm against nominal_height=190mm plus the fixed
+         BASE_TO_HIP_Y=50mm ab/ad spread leaves little headroom (see the margin derivation in
+         README). Zeroed here (not the task's nonzero draft numbers) to keep that margin
+         (every extra mm of x/y offset here eats directly into it) until leg_kinematics.json
+         gives real numbers the whole chain (gait height, offsets) can be re-checked against
+         together. Mirrored +/- per leg in leg.urdf.xacro (the mirroring code, and the
+         x-then-y-offset joint structure, are unchanged and still correct for nonzero values). -->
+    <xacro:property name="hip_to_upper_leg_x" value="0.0" /> <!-- m, PLACEHOLDER (zeroed for IK margin, see above), swap from leg_kinematics.json -->
+    <xacro:property name="hip_to_upper_leg_y" value="0.0" /> <!-- m, PLACEHOLDER (zeroed for IK margin, see above), swap from leg_kinematics.json -->
+
+    <!-- Upper leg to lower leg (CHAMP <leg>_lower_leg_joint origin).
+         z is the FIXED V3 SPEC contract length (THIGH_LENGTH); y is a PLACEHOLDER lateral
+         dogleg offset pending leg_kinematics.json, zeroed for the same IK-reach-margin reason
+         as hip_to_upper_leg_x/y above. -->
+    <xacro:property name="upper_leg_to_lower_leg_y" value="0.0" /> <!-- m, PLACEHOLDER (zeroed for IK margin, see above), swap from leg_kinematics.json -->
+    <xacro:property name="upper_leg_to_lower_leg_z" value="0.1075" /> <!-- m, params.py THIGH_LENGTH = 107.5mm (V3 SPEC contract, NOT a placeholder) -->
+
+    <!-- Lower leg to foot (CHAMP <leg>_foot_joint origin). Purely along Z, fixed V3 SPEC
+         contract length (SHIN_LENGTH). -->
+    <xacro:property name="lower_leg_to_foot_z" value="0.130" /> <!-- m, params.py SHIN_LENGTH = 130.0mm (V3 SPEC contract, NOT a placeholder) -->
+
+    <!-- Masses (draft, per the task spec). -->
+    <xacro:property name="base_mass" value="1.45" />       <!-- kg, incl. 4 ab/ad servos, battery, Pi, LiDAR (task spec) -->
+    <xacro:property name="hip_mass" value="0.10" />        <!-- kg, per hip/shoulder bracket + ab/ad servo (task spec) -->
+    <xacro:property name="upper_leg_mass" value="0.11" />  <!-- kg, per upper leg (thigh) link (task spec) -->
+    <xacro:property name="lower_leg_mass" value="0.04" />  <!-- kg, per lower leg (shin) link (task spec) -->
+    <!-- Sum check: base 1.45 + 4 legs * (0.10+0.11+0.04) = 1.45 + 1.00 = 2.45 kg, under
+         params.py MASS_TARGET_KG=2.6kg; the 0.15kg margin is fasteners/wiring/feet, not
+         modeled as their own links. -->
+
+    <!-- Box sizes for visual/collision/inertia (primitive geometry only).
+         Hip box = the DS3225 servo case envelope from params.py (real datasheet numbers,
+         SERVO_BODY_L/W/H), since the hip link is dominated by the ab/ad servo housing.
+         Upper/lower leg cross-section = params.py LEG_W (SERVO_BODY_W + 2*WALL, the leg
+         bracket width used throughout quadruped/cad/*.py) by a thin draft depth; z-length is
+         the real THIGH_LENGTH/SHIN_LENGTH contract value above, not a placeholder. -->
+    <xacro:property name="base_x_length" value="0.220" />  <!-- m, 2*base_to_hip_x; footprint spans the 4 hip points -->
+    <xacro:property name="base_y_length" value="0.100" />  <!-- m, 2*base_to_hip_y -->
+    <xacro:property name="base_z_length" value="0.090" />  <!-- m, draft, within params.py BODY_MAX_BELOW_HIP(35mm)+LEG_MAX_Z(60mm) envelope -->
+
+    <xacro:property name="hip_x_length" value="0.040" />   <!-- m, params.py SERVO_BODY_L (DS3225 case) -->
+    <xacro:property name="hip_y_length" value="0.020" />   <!-- m, params.py SERVO_BODY_W (DS3225 case) -->
+    <xacro:property name="hip_z_length" value="0.0405" />  <!-- m, params.py SERVO_BODY_H (DS3225 case) -->
+
+    <xacro:property name="upper_leg_x_length" value="0.020" /> <!-- m, draft cross-section depth -->
+    <xacro:property name="upper_leg_y_length" value="0.028" /> <!-- m, params.py LEG_W = SERVO_BODY_W(20)+2*WALL(4) -->
+    <xacro:property name="upper_leg_z_length" value="${upper_leg_to_lower_leg_z}" /> <!-- m, = THIGH_LENGTH -->
+
+    <xacro:property name="lower_leg_x_length" value="0.015" /> <!-- m, draft cross-section depth (tapers vs. upper leg) -->
+    <xacro:property name="lower_leg_y_length" value="0.020" /> <!-- m, draft cross-section width -->
+    <xacro:property name="lower_leg_z_length" value="${lower_leg_to_foot_z}" /> <!-- m, = SHIN_LENGTH -->
+
+    <!-- Joint limits.
+         Effort: DS3225 stall torque at 6.8V (sourced datasheet figures, see README/report:
+         DSServo DS3225MG: 25 kg.cm @ 6.8V -> 25*9.81/100 = 2.4525 N.m). Exposed as a
+         xacro:arg so the 3 required servo-config test runs (DS3225 / DS3218 / 60% DS3225)
+         can each override it at `xacro` invocation time without editing this file:
+           xacro sih_quadruped.urdf.xacro leg_effort_limit:=2.4525   (DS3225 stall, default)
+           xacro sih_quadruped.urdf.xacro leg_effort_limit:=2.109    (DS3218 stall)
+           xacro sih_quadruped.urdf.xacro leg_effort_limit:=1.4715   (60% of DS3225 stall)
+         Velocity is NOT varied by the test matrix (only effort is): fixed at the DS3225
+         datasheet speed, 0.13 sec/60deg @ 6.8V -> (60/0.13) deg/s * (pi/180) = 8.0552 rad/s.
+         Position: +-pi, matching stock CHAMP (leg.urdf.xacro): the gait planner, not the
+         URDF, keeps the legs in a sane range. params.py V3 SPEC also lists tighter
+         collision-free CAD ranges (ABAD_RANGE_DEG=+-25, HIP_PITCH_RANGE_DEG=+-90,
+         KNEE_RANGE_DEG=+-150) for the leg's own mechanical stops; not applied here unless
+         the Gazebo gait sweep shows the URDF limit needs to be tighter than +-pi. -->
+    <xacro:arg name="leg_effort_limit" default="2.4525" />
+    <xacro:property name="leg_joint_effort" value="$(arg leg_effort_limit)" /> <!-- N.m, see above -->
+    <xacro:property name="leg_joint_velocity" value="8.0552" /> <!-- rad/s, DS3225 @ 6.8V, see above -->
+
+</robot>
