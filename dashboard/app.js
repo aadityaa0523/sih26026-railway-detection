@@ -4,14 +4,17 @@
 // ponytail: a plain string table is plenty for two languages — no i18n library needed.
 const I18N = {
   en: {
-    appTitle: 'SenseGuard Control Room',
+    appTitle: 'RAIL-N.E.D. Control Room',
+    appSub: 'Railway Narcotics & Explosives Detection · Prototype · SIH 2026',
+    feedHead: 'Live Alert Register', mapHead: 'Station Zone Map',
+    kpiScans: 'Total Scans', kpiAlert: 'Alerts', kpiReview: 'Under Review', kpiClean: 'Clean', kpiDevices: 'Devices Reporting',
     statusOnline: 'Online', statusOffline: 'Offline (Demo Mode)',
     queued: 'events queued',
     sampleBanner: 'SAMPLE / DEMO DATA — no live sensors connected. Every event below is a scripted example, not a real detection.',
     tabFeed: 'Alert Feed', tabMap: 'Station Map',
     colTime: 'Time', colLocation: 'Location', colTier: 'Tier', colLabel: 'Predicted Label', colConfidence: 'Confidence', colDevice: 'Device',
     tierClean: 'Clean', tierReview: 'Review', tierAlert: 'Alert',
-    footerNote: 'SenseGuard is a tier-1 presumptive screen (volatile marker compounds), not confirmatory lab analysis. All results here must be verified per NDPS Act 1985 Sec. 50 procedure before any legal action.',
+    footerNote: 'RAIL-N.E.D. is a presumptive field screen, not confirmatory lab analysis. All results here must be verified by FSL / IMS lab confirmation and NDPS Act 1985 Sec. 50 procedure before any legal action.',
     sample: 'SAMPLE',
     detailTitle: 'Event Detail', close: 'Close',
     sensorTrace: 'Sensor Trace', gpsLocation: 'GPS / Station Location',
@@ -21,14 +24,17 @@ const I18N = {
     device: 'Device', zone: 'Zone', coords: 'Coordinates',
   },
   hi: {
-    appTitle: 'सेंसगार्ड नियंत्रण कक्ष',
+    appTitle: 'RAIL-N.E.D. नियंत्रण कक्ष',
+    appSub: 'रेलवे नशीले पदार्थ एवं विस्फोटक पहचान · प्रोटोटाइप · SIH 2026',
+    feedHead: 'लाइव अलर्ट रजिस्टर', mapHead: 'स्टेशन क्षेत्र मानचित्र',
+    kpiScans: 'कुल स्कैन', kpiAlert: 'चेतावनी', kpiReview: 'समीक्षाधीन', kpiClean: 'स्वच्छ', kpiDevices: 'रिपोर्टिंग डिवाइस',
     statusOnline: 'ऑनलाइन', statusOffline: 'ऑफ़लाइन (डेमो मोड)',
     queued: 'इवेंट कतार में',
     sampleBanner: 'नमूना / डेमो डेटा — कोई लाइव सेंसर कनेक्ट नहीं है। नीचे हर घटना एक तैयार उदाहरण है, वास्तविक पहचान नहीं।',
     tabFeed: 'अलर्ट फ़ीड', tabMap: 'स्टेशन मानचित्र',
     colTime: 'समय', colLocation: 'स्थान', colTier: 'स्तर', colLabel: 'अनुमानित लेबल', colConfidence: 'विश्वास', colDevice: 'डिवाइस',
     tierClean: 'स्वच्छ', tierReview: 'समीक्षा', tierAlert: 'चेतावनी',
-    footerNote: 'सेंसगार्ड एक टियर-1 प्रारंभिक जांच है (वाष्पशील मार्कर यौगिक), पुष्टिकारक प्रयोगशाला विश्लेषण नहीं। किसी भी कानूनी कार्रवाई से पहले एनडीपीएस अधिनियम 1985 धारा 50 प्रक्रिया के अनुसार सत्यापन आवश्यक है।',
+    footerNote: 'RAIL-N.E.D. एक प्रारंभिक फ़ील्ड जांच है, पुष्टिकारक प्रयोगशाला विश्लेषण नहीं। किसी भी कानूनी कार्रवाई से पहले FSL / IMS प्रयोगशाला पुष्टि तथा एनडीपीएस अधिनियम 1985 धारा 50 प्रक्रिया के अनुसार सत्यापन आवश्यक है।',
     sample: 'नमूना',
     detailTitle: 'घटना विवरण', close: 'बंद करें',
     sensorTrace: 'सेंसर ट्रेस', gpsLocation: 'जीपीएस / स्टेशन स्थान',
@@ -41,6 +47,11 @@ const I18N = {
 
 const state = { lang: 'en', queued: 3, online: false };
 const t = (key) => I18N[state.lang][key] || key;
+const fmtDateTime = (iso) => {
+  const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return `${p(d.getDate())}-${mon}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
 
 /* ---------- station schematic (shared by map view and event detail) ---------- */
 // Fixed layout, not a real surveyed map — just enough geography to place alerts by zone.
@@ -62,8 +73,8 @@ function zoneCenter(zoneName) {
 function stationBaseSvgParts() {
   let s = '';
   for (const [name, z] of Object.entries(ZONES)) {
-    s += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="4" fill="var(--surface)" stroke="var(--line)"/>`;
-    s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" fill="var(--ink-dim)" text-anchor="middle">${name}</text>`;
+    s += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="4" fill="var(--surface)" stroke="var(--navy)" stroke-width="1.2"/>`;
+    s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" fill="var(--navy)" font-weight="600" text-anchor="middle">${name}</text>`;
   }
   return s;
 }
@@ -148,7 +159,7 @@ const SAMPLE_ALERTS = [
 /* ---------- MQTT connection stub ---------- */
 // Production would use a real MQTT.js client over a WebSocket transport
 // (e.g. new Paho.MQTT.Client() or mqtt.connect('wss://broker:8083/mqtt')) subscribing to
-// per-device topics like rpf/senseguard/<deviceId>/events. There is no broker running for
+// per-device topics like rpf/railned/<deviceId>/events. There is no broker running for
 // this hackathon build, so this stub just attempts a plain WebSocket handshake and falls
 // back to demo mode on any error or timeout — the architecture is real, the broker isn't yet.
 function connectMqtt(brokerUrl, { onOnline, onOffline }) {
@@ -173,13 +184,23 @@ function applyI18n() {
   document.querySelector('input.officer-id')?.setAttribute('placeholder', t('officerIdPlaceholder'));
 }
 
+function renderKpis() {
+  const n = (tier) => SAMPLE_ALERTS.filter((e) => e.tier === tier).length;
+  const devices = new Set(SAMPLE_ALERTS.map((e) => e.deviceId)).size;
+  const card = (cls, num, key) => `<div class="kpi ${cls}"><div class="n mono">${num}</div><div class="l">${t(key)}</div></div>`;
+  document.getElementById('kpis').innerHTML =
+    card('', SAMPLE_ALERTS.length, 'kpiScans') + card('k-alert', n('alert'), 'kpiAlert') +
+    card('k-review', n('review'), 'kpiReview') + card('k-clean', n('clean'), 'kpiClean') +
+    card('', devices, 'kpiDevices');
+}
+
 function tierLabel(tier) { return t('tier' + tier[0].toUpperCase() + tier.slice(1)); }
 
 function renderFeed() {
   const body = document.getElementById('feedBody');
   body.innerHTML = SAMPLE_ALERTS.map((ev) => `
     <tr class="feed-row" data-id="${ev.id}">
-      <td class="mono">${new Date(ev.time).toLocaleTimeString()}</td>
+      <td class="mono">${fmtDateTime(ev.time)}</td>
       <td>${ev.zone}</td>
       <td><span class="pill tier-${ev.tier}">${tierLabel(ev.tier)}</span></td>
       <td>${ev.label}<span class="sample-tag">${t('sample')}</span></td>
@@ -202,7 +223,7 @@ async function openDetail(id) {
         <button class="close-btn" id="closeDetailBtn">${t('close')}</button>
       </div>
       <dl class="kv">
-        <dt>${t('colTime')}</dt><dd class="mono">${new Date(ev.time).toLocaleString()}</dd>
+        <dt>${t('colTime')}</dt><dd class="mono">${fmtDateTime(ev.time)}</dd>
         <dt>${t('device')}</dt><dd class="mono">${ev.deviceId}</dd>
         <dt>${t('zone')}</dt><dd>${ev.zone}</dd>
         <dt>${t('coords')}</dt><dd class="mono">${ev.lat.toFixed(4)}, ${ev.lon.toFixed(4)}</dd>
@@ -303,6 +324,7 @@ function setLang(lang) {
   document.getElementById('langHi').classList.toggle('active', lang === 'hi');
   applyI18n();
   renderFeed();
+  renderKpis();
 }
 
 function setConnStatus(online) {
@@ -316,6 +338,7 @@ function setConnStatus(online) {
 (async function init() {
   await buildChain(SAMPLE_ALERTS);
   renderFeed();
+  renderKpis();
   applyI18n();
 
   document.getElementById('tabFeedBtn').addEventListener('click', () => switchTab('feed'));
