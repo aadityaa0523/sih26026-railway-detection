@@ -1,0 +1,124 @@
+<mujoco model="rail_ned_quadruped">
+  <compiler angle="degree" autolimits="true"/>
+  <option timestep="0.001" integrator="implicitfast" gravity="0 0 -9.81"/>
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+    <quality shadowsize="4096"/>
+    <headlight ambient="0.45 0.45 0.45" diffuse="0.6 0.6 0.6"/>
+  </visual>
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.75 0.85 0.95" rgb2="0.95 0.95 0.97" width="512" height="512"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.36 0.41 0.49" rgb2="0.27 0.31 0.39" width="512" height="512"/>
+    <material name="grid" texture="grid" texrepeat="12 12" texuniform="true" reflectance="0.03"/>
+        <mesh name="bottom_deck" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/bottom_deck.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="top_deck" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/top_deck.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="body_walls" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/body_walls.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="abad_mount" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/abad_mount.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="skid_plate" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/skid_plate.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="payload" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/payload.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="pan_tilt_head" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/pan_tilt_head.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="sniffer_arm" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/sniffer_arm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LF_shoulder" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shoulder_pp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LF_thigh" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_thigh_pp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LF_shin" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shin_pp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RF_shoulder" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shoulder_pm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RF_thigh" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_thigh_pm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RF_shin" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shin_pm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LH_shoulder" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shoulder_mp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LH_thigh" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_thigh_mp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="LH_shin" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shin_mp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RH_shoulder" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shoulder_mm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RH_thigh" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_thigh_mm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="RH_shin" file="/home/user/sih26026-railway-detection/quadruped/sim/out/_meshes/leg_shin_mm.stl" scale="0.001 0.001 0.001"/>
+  </asset>
+  <worldbody>
+    <light pos="0.5 -0.5 2.0" dir="-0.2 0.2 -1" directional="true" diffuse="0.8 0.8 0.8" castshadow="true"/>
+    <geom name="floor" type="plane" size="20 20 0.1" material="grid" friction="1.0 0.01 0.001"/>
+    <body name="base" pos="0 0 0.4">
+      <freejoint name="root"/>
+            <geom type="mesh" mesh="bottom_deck" rgba="0.2 0.22 0.26 1" mass="0.1376" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="top_deck" rgba="0.22 0.3 0.42 1" mass="0.1376" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="body_walls" rgba="0.3 0.34 0.4 1" mass="0.0963" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="abad_mount" rgba="0.85 0.45 0.12 1" mass="0.1652" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="skid_plate" rgba="0.15 0.15 0.15 1" mass="0.0413" contype="1" conaffinity="1"/>
+      <geom type="mesh" mesh="payload" rgba="0.35 0.6 0.85 0.55" mass="0.6882" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="pan_tilt_head" rgba="0.1 0.6 0.55 1" mass="0.0551" contype="0" conaffinity="0"/>
+      <geom type="mesh" mesh="sniffer_arm" rgba="0.1 0.6 0.55 1" mass="0.0551" contype="0" conaffinity="0"/>
+      
+    <body name="LF_abad" pos="0.110000 0.050000 0.032000">
+      <joint name="LF_abad" type="hinge" axis="1.000000 0.000000 0.000000" pos="0.000000 0.000000 0.000000" range="-25 25" damping="0.05" armature="0.004"/>
+      <geom type="mesh" mesh="LF_shoulder" rgba="0.85 0.45 0.12 1" mass="0.1293" contype="0" conaffinity="0"/>
+      <body name="LF_thigh">
+        <joint name="LF_hip" type="hinge" axis="0.000000 1.000000 0.000000" pos="0.000000 0.055000 0.000000" range="-90 90" damping="0.05" armature="0.004"/>
+        <geom type="mesh" mesh="LF_thigh" rgba="0.9 0.7 0.15 1" mass="0.1384" contype="0" conaffinity="0"/>
+        <body name="LF_shin">
+          <joint name="LF_knee" type="hinge" axis="0.000000 1.000000 0.000000" pos="0.000000 0.055000 -0.107500" range="-150 150" damping="0.05" armature="0.004"/>
+          <geom type="mesh" mesh="LF_shin" rgba="0.3 0.65 0.35 1" mass="0.0382" contype="0" conaffinity="0"/>
+          <geom type="sphere" size="0.007" pos="0.020037 0.111000 -0.227847" rgba="0.1 0.1 0.1 1"
+                friction="1.2 0.01 0.001" contype="1" conaffinity="1" mass="0.001"/>
+          <site name="LF_foot" pos="0.020037 0.111000 -0.234847" size="0.004" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+    <body name="RF_abad" pos="0.110000 -0.050000 0.032000">
+      <joint name="RF_abad" type="hinge" axis="1.000000 0.000000 0.000000" pos="0.000000 0.000000 0.000000" range="-25 25" damping="0.05" armature="0.004"/>
+      <geom type="mesh" mesh="RF_shoulder" rgba="0.85 0.45 0.12 1" mass="0.1293" contype="0" conaffinity="0"/>
+      <body name="RF_thigh">
+        <joint name="RF_hip" type="hinge" axis="0.000000 1.000000 0.000000" pos="0.000000 -0.055000 0.000000" range="-90 90" damping="0.05" armature="0.004"/>
+        <geom type="mesh" mesh="RF_thigh" rgba="0.9 0.7 0.15 1" mass="0.1384" contype="0" conaffinity="0"/>
+        <body name="RF_shin">
+          <joint name="RF_knee" type="hinge" axis="0.000000 1.000000 0.000000" pos="0.000000 -0.055000 -0.107500" range="-150 150" damping="0.05" armature="0.004"/>
+          <geom type="mesh" mesh="RF_shin" rgba="0.3 0.65 0.35 1" mass="0.0382" contype="0" conaffinity="0"/>
+          <geom type="sphere" size="0.007" pos="0.020037 -0.111000 -0.227847" rgba="0.1 0.1 0.1 1"
+                friction="1.2 0.01 0.001" contype="1" conaffinity="1" mass="0.001"/>
+          <site name="RF_foot" pos="0.020037 -0.111000 -0.234847" size="0.004" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+    <body name="LH_abad" pos="-0.110000 0.050000 0.032000">
+      <joint name="LH_abad" type="hinge" axis="1.000000 0.000000 0.000000" pos="0.000000 0.000000 0.000000" range="-25 25" damping="0.05" armature="0.004"/>
+      <geom type="mesh" mesh="LH_shoulder" rgba="0.85 0.45 0.12 1" mass="0.1293" contype="0" conaffinity="0"/>
+      <body name="LH_thigh">
+        <joint name="LH_hip" type="hinge" axis="0.000000 1.000000 0.000000" pos="-0.000000 0.055000 0.000000" range="-90 90" damping="0.05" armature="0.004"/>
+        <geom type="mesh" mesh="LH_thigh" rgba="0.9 0.7 0.15 1" mass="0.1384" contype="0" conaffinity="0"/>
+        <body name="LH_shin">
+          <joint name="LH_knee" type="hinge" axis="0.000000 1.000000 0.000000" pos="-0.000000 0.055000 -0.107500" range="-150 150" damping="0.05" armature="0.004"/>
+          <geom type="mesh" mesh="LH_shin" rgba="0.3 0.65 0.35 1" mass="0.0382" contype="0" conaffinity="0"/>
+          <geom type="sphere" size="0.007" pos="-0.020037 0.111000 -0.227847" rgba="0.1 0.1 0.1 1"
+                friction="1.2 0.01 0.001" contype="1" conaffinity="1" mass="0.001"/>
+          <site name="LH_foot" pos="-0.020037 0.111000 -0.234847" size="0.004" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+    <body name="RH_abad" pos="-0.110000 -0.050000 0.032000">
+      <joint name="RH_abad" type="hinge" axis="1.000000 0.000000 0.000000" pos="0.000000 0.000000 0.000000" range="-25 25" damping="0.05" armature="0.004"/>
+      <geom type="mesh" mesh="RH_shoulder" rgba="0.85 0.45 0.12 1" mass="0.1293" contype="0" conaffinity="0"/>
+      <body name="RH_thigh">
+        <joint name="RH_hip" type="hinge" axis="0.000000 1.000000 0.000000" pos="-0.000000 -0.055000 0.000000" range="-90 90" damping="0.05" armature="0.004"/>
+        <geom type="mesh" mesh="RH_thigh" rgba="0.9 0.7 0.15 1" mass="0.1384" contype="0" conaffinity="0"/>
+        <body name="RH_shin">
+          <joint name="RH_knee" type="hinge" axis="0.000000 1.000000 0.000000" pos="-0.000000 -0.055000 -0.107500" range="-150 150" damping="0.05" armature="0.004"/>
+          <geom type="mesh" mesh="RH_shin" rgba="0.3 0.65 0.35 1" mass="0.0382" contype="0" conaffinity="0"/>
+          <geom type="sphere" size="0.007" pos="-0.020037 -0.111000 -0.227847" rgba="0.1 0.1 0.1 1"
+                friction="1.2 0.01 0.001" contype="1" conaffinity="1" mass="0.001"/>
+          <site name="RH_foot" pos="-0.020037 -0.111000 -0.234847" size="0.004" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+    </body>
+  </worldbody>
+  <actuator>
+        <position name="LF_abad" joint="LF_abad" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="LF_hip" joint="LF_hip" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="LF_knee" joint="LF_knee" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RF_abad" joint="RF_abad" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RF_hip" joint="RF_hip" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RF_knee" joint="RF_knee" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="LH_abad" joint="LH_abad" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="LH_hip" joint="LH_hip" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="LH_knee" joint="LH_knee" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RH_abad" joint="RH_abad" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RH_hip" joint="RH_hip" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+    <position name="RH_knee" joint="RH_knee" kp="30" kv="0.8" forcerange="-2.452 2.452"/>
+  </actuator>
+</mujoco>
