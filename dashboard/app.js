@@ -46,6 +46,22 @@ const I18N = {
 };
 
 const state = { lang: 'en', queued: 3, online: false };
+
+// Display names for station zones and sample labels. Keys stay English (they are the data
+// keys used by ZONES / SAMPLE_ALERTS); only what is drawn on screen is translated.
+const ZONE_NAMES = {
+  hi: { 'Platform 1': 'प्लेटफ़ॉर्म 1', 'Platform 2': 'प्लेटफ़ॉर्म 2', 'Foot Overbridge': 'पैदल ऊपरी पुल',
+        'Parcel Office': 'पार्सल कार्यालय', 'Entry Gate A': 'प्रवेश द्वार A', 'Entry Gate B': 'प्रवेश द्वार B' },
+};
+const LABEL_NAMES = {
+  hi: { 'Cannabis (terpene profile match)': 'गांजा (टरपीन प्रोफ़ाइल मिलान)',
+        'Unknown VOC — needs confirmation': 'अज्ञात VOC — पुष्टि आवश्यक',
+        'Acetic-acid marker (heroin-processing proxy)': 'एसिटिक-एसिड मार्कर (हेरोइन-प्रसंस्करण संकेतक)',
+        'No marker detected': 'कोई मार्कर नहीं मिला',
+        'Methyl-benzoate marker (cocaine-processing proxy)': 'मिथाइल-बेंज़ोएट मार्कर (कोकीन-प्रसंस्करण संकेतक)' },
+};
+const zoneName = (z) => (ZONE_NAMES[state.lang] || {})[z] || z;
+const labelName = (l) => (LABEL_NAMES[state.lang] || {})[l] || l;
 const t = (key) => I18N[state.lang][key] || key;
 const fmtDateTime = (iso) => {
   const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
@@ -74,7 +90,7 @@ function stationBaseSvgParts() {
   let s = '';
   for (const [name, z] of Object.entries(ZONES)) {
     s += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="4" fill="var(--surface)" stroke="var(--navy)" stroke-width="1.2"/>`;
-    s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" fill="var(--navy)" font-weight="600" text-anchor="middle">${name}</text>`;
+    s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" fill="var(--navy)" font-weight="600" text-anchor="middle">${zoneName(name)}</text>`;
   }
   return s;
 }
@@ -84,7 +100,7 @@ function renderStationMap(alerts) {
   let markers = '';
   alerts.forEach((ev) => {
     const c = zoneCenter(ev.zone);
-    markers += `<circle cx="${c.x}" cy="${c.y - 20}" r="7" fill="${TIER_COLOR[ev.tier]}" stroke="var(--surface)" stroke-width="2"><title>${ev.label} (${ev.zone})</title></circle>`;
+    markers += `<circle cx="${c.x}" cy="${c.y - 20}" r="7" fill="${TIER_COLOR[ev.tier]}" stroke="var(--surface)" stroke-width="2"><title>${labelName(ev.label)} (${zoneName(ev.zone)})</title></circle>`;
   });
   holder.innerHTML = `<svg viewBox="0 0 760 380" width="100%" height="360" xmlns="http://www.w3.org/2000/svg">${stationBaseSvgParts()}${markers}</svg>`;
 }
@@ -201,9 +217,9 @@ function renderFeed() {
   body.innerHTML = SAMPLE_ALERTS.map((ev) => `
     <tr class="feed-row" data-id="${ev.id}">
       <td class="mono">${fmtDateTime(ev.time)}</td>
-      <td>${ev.zone}</td>
+      <td>${zoneName(ev.zone)}</td>
       <td><span class="pill tier-${ev.tier}">${tierLabel(ev.tier)}</span></td>
-      <td>${ev.label}<span class="sample-tag">${t('sample')}</span></td>
+      <td>${labelName(ev.label)}<span class="sample-tag">${t('sample')}</span></td>
       <td class="mono">${ev.confidence.toFixed(1)}%</td>
       <td class="mono">${ev.deviceId}</td>
     </tr>`).join('');
@@ -225,10 +241,10 @@ async function openDetail(id) {
       <dl class="kv">
         <dt>${t('colTime')}</dt><dd class="mono">${fmtDateTime(ev.time)}</dd>
         <dt>${t('device')}</dt><dd class="mono">${ev.deviceId}</dd>
-        <dt>${t('zone')}</dt><dd>${ev.zone}</dd>
+        <dt>${t('zone')}</dt><dd>${zoneName(ev.zone)}</dd>
         <dt>${t('coords')}</dt><dd class="mono">${ev.lat.toFixed(4)}, ${ev.lon.toFixed(4)}</dd>
         <dt>${t('colTier')}</dt><dd><span class="pill tier-${ev.tier}">${tierLabel(ev.tier)}</span></dd>
-        <dt>${t('colLabel')}</dt><dd>${ev.label}</dd>
+        <dt>${t('colLabel')}</dt><dd>${labelName(ev.label)}</dd>
         <dt>${t('colConfidence')}</dt><dd class="mono">${ev.confidence.toFixed(1)}%</dd>
       </dl>
 
@@ -325,6 +341,7 @@ function setLang(lang) {
   applyI18n();
   renderFeed();
   renderKpis();
+  if (!document.getElementById('viewMap').hidden) renderStationMap(SAMPLE_ALERTS);
 }
 
 function setConnStatus(online) {
