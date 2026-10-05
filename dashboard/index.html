@@ -497,13 +497,12 @@ const routeChips = (e) => {
 const kpi = (n, l, cls = '', d = '') => `<div class="kpi ${cls}"><div class="n mono">${n}</div><div class="l">${esc(T(l))}</div>${d ? `<div class="d muted">${d}</div>` : ''}</div>`;
 const panel = (title, body, { flush = false, extra = '' } = {}) => `<section class="panel"><div class="panel-head">${esc(T(title))}${extra}</div><div class="panel-body ${flush ? 'flush' : ''}">${body}</div></section>`;
 
-function eventRows(list, { limit = 100 } = {}) {
+function eventRows(list, { limit = 100, compact = false } = {}) {
   return list.slice(0, limit).map((e) => `<tr class="clickable" tabindex="0" data-open="${e.id}">
-    <td class="mono">${fmtShort(e.time)}</td><td>${esc(stName(e.station))}</td><td>${esc(T(e.zone))}</td><td>${tierPill(e.tier)}</td>
-    <td>${esc(T(e.label))}<span class="tag">${T('SAMPLE')}</span></td><td>${routeChips(e)}</td><td class="mono">${pct(e.confidence)}</td>
-    <td class="mono">${e.deviceId}</td><td>${statusPill(e.status)}</td></tr>`).join('');
+    <td class="mono">${fmtShort(e.time)}</td><td>${esc(stName(e.station))}${compact ? `<div class="muted" style="font-size:.72rem">${esc(T(e.zone))}</div>` : ''}</td>${compact ? '' : `<td>${esc(T(e.zone))}</td>`}<td>${tierPill(e.tier)}</td>
+    <td>${esc(T(e.label))}<span class="tag">${T('SAMPLE')}</span></td><td>${routeChips(e)}</td>${compact ? '' : `<td class="mono">${pct(e.confidence)}</td><td class="mono">${e.deviceId}</td>`}<td>${statusPill(e.status)}</td></tr>`).join('');
 }
-const eventHead = () => `<tr>${['Time', 'Station', 'Zone', 'Tier', 'Predicted Label', 'Routes', 'Confidence', 'Device', 'Status'].map((h) => `<th>${esc(T(h))}</th>`).join('')}</tr>`;
+const eventHead = (compact = false) => `<tr>${['Time', 'Station', ...(compact ? [] : ['Zone']), 'Tier', 'Predicted Label', 'Routes', ...(compact ? [] : ['Confidence', 'Device']), 'Status'].map((h) => `<th>${esc(T(h))}</th>`).join('')}</tr>`;
 
 /* ============================= 1. COMMAND CENTRE ============================= */
 function viewOverview() {
@@ -528,7 +527,7 @@ function viewOverview() {
     ${panel('Alert tiers', donut([{ label: 'Alert', value: by('alert'), color: 'var(--alert)' }, { label: 'Review', value: by('review'), color: 'var(--review)' }, { label: 'Clean', value: by('clean'), color: 'var(--clean)' }], { centre: 'scans' }) + `<div class="legend" style="justify-content:center"><span><i style="background:var(--alert)"></i>${T('Alert')} ${by('alert')}</span><span><i style="background:var(--review)"></i>${T('Review')} ${by('review')}</span><span><i style="background:var(--clean)"></i>${T('Clean')} ${by('clean')}</span></div>`)}
   </div>
   <div class="grid g-main">
-    ${panel('Priority queue', `<div class="tscroll"><table class="tbl"><thead>${eventHead()}</thead><tbody>${eventRows(queue)}</tbody></table></div>${queue.length ? '' : '<p class="muted" style="padding:10px">No open items.</p>'}`, { flush: true })}
+    ${panel('Priority queue', `<div class="tscroll"><table class="tbl"><thead>${eventHead(true)}</thead><tbody>${eventRows(queue, { compact: true })}</tbody></table></div>${queue.length ? '' : '<p class="muted" style="padding:10px">No open items.</p>'}`, { flush: true })}
     ${panel('Route agreement (two-route rule)', hbars([{ label: '0 routes flag', value: agree[0], color: 'var(--clean)' }, { label: '1 route flags', value: agree[1], color: 'var(--review)' }, { label: '2+ routes agree', value: agree[2] + agree[3], color: 'var(--alert)' }]) +
       `<p class="note">An <b>Alert</b> needs two independent routes (SNIFF, HEAT, SEE) to agree. One route alone only raises <b>Review</b>. Swabbing the same bag twice is not two routes.</p>`)}
   </div>
@@ -685,7 +684,7 @@ function viewFsl() {
   const pending = ev.filter((e) => e.status === 'fsl');
   return `<div class="kpis">${kpi(pending.length, 'Awaiting FSL', 'k-review')}${kpi(conf, 'Lab confirmed', 'k-clean')}${kpi(fp, 'False positive')}${kpi(prec === null ? '—' : pct(prec), 'Share of lab-checked flags confirmed')}</div>
   <div class="grid g2">
-    ${panel('Awaiting FSL', `<div class="tscroll"><table class="tbl"><thead>${eventHead()}</thead><tbody>${eventRows(pending, { limit: 8 })}</tbody></table></div>`, { flush: true })}
+    ${panel('Awaiting FSL', `<div class="tscroll"><table class="tbl"><thead>${eventHead(true)}</thead><tbody>${eventRows(pending, { limit: 8, compact: true })}</tbody></table></div>`, { flush: true })}
     ${panel('Model versions', `<div class="tscroll"><table class="tbl" style="min-width:0"><thead><tr><th>Version</th><th>Date</th><th>Trained on</th><th>Status</th></tr></thead><tbody>${MODEL_VERSIONS.map((m) => `<tr><td class="mono">${m.v}</td><td>${m.date}</td><td>${esc(m.data)}</td><td><span class="pill ${m.status === 'deployed' ? 'ok' : 'neutral'}">${m.status}</span></td></tr>`).join('')}</tbody></table></div>`, { flush: true })}</div>
   <div style="height:12px"></div>
   ${panel('Signed update rollout', `<div class="toolbar no-print"><button class="btn" data-act="rollout" ${can('admin') ? '' : 'disabled'}>Simulate signed update rollout</button><span class="muted">${can('admin') ? '' : 'Control Room Supervisor only'}</span></div>
