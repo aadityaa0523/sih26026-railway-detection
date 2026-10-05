@@ -1,4 +1,4 @@
-// Zero-dependency static file server for the control-room dashboard (LAN use; also opens via file://).
+// Zero-dependency static file server for the control-room dashboard (serves the bundled index.html).
 const http = require('http');
 const fs = require('fs');
 const path = require('path');

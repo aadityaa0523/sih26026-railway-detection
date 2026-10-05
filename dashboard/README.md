@@ -1,7 +1,9 @@
 # RAIL-N.E.D. control-room dashboard (prototype)
 
-Offline, dependency-free web app (no framework, no CDN, no build step). Open `index.html`
-directly, or `node server.js` and visit http://localhost:8845.
+Offline, dependency-free web app (no framework, no CDN). `index.html` is a **single self-contained bundle** (CSS + JS inlined) so it opens anywhere, including previewers that only load one file.
+Open it directly, or `node server.js` and visit http://localhost:8845.
+
+Sources live in `src/` (`index.src.html`, `css/`, `js/`). After editing them run `node build.js` to regenerate `index.html`.
 
 **All data is fictional or simulated**: fictional stations, scripted events, simulated HEAT
 curves and device signatures. Every page carries a SAMPLE / DEMO banner. No official emblem or
