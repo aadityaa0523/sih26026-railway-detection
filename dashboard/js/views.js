@@ -178,7 +178,7 @@ function viewFleet() {
 
 /* ============================= 5. ROBOT PATROL ============================= */
 function viewPatrol() {
-  const rows = COACH_SEGMENTS.map((s) => { const age = s.min + S.patrolTick; return `<tr><td>${esc(s.id)}</td><td class="mono">${age < 60 ? age + ' min' : Math.round(age / 6) / 10 + ' h'} ago</td><td>${s.changed ? '<span class="pill bad">Changed</span>' : '<span class="pill ok">Matches baseline</span>'}</td><td>${s.changed ? `<button class="btn ghost no-print" data-act="rescan" data-seg="${esc(s.id)}" ${can('robot') ? '' : 'disabled'}>Request re-scan + swab</button>` : '—'}</td></tr>`; }).join('');
+  const rows = COACH_SEGMENTS.map((s) => { const age = Math.round(s.min + S.patrolTick); return `<tr><td>${esc(s.id)}</td><td class="mono">${age < 60 ? age + ' min' : Math.round(age / 6) / 10 + ' h'} ago</td><td>${s.changed ? '<span class="pill bad">Changed</span>' : '<span class="pill ok">Matches baseline</span>'}</td><td>${s.changed ? `<button class="btn ghost no-print" data-act="rescan" data-seg="${esc(s.id)}" ${can('robot') ? '' : 'disabled'}>Request re-scan + swab</button>` : '—'}</td></tr>`; }).join('');
   return `<div class="grid g-main">
     ${panel('Patrol route', `<div class="maphold" id="patrolMap">${patrolMapSvg()}</div><div class="legend"><span><i style="background:var(--navy)"></i>Robot</span><span><i style="background:var(--alert)"></i>${T('No-go: 25 kV overhead zone')}</span></div>
       <p class="note">SEE route compares each coach / track segment with its own last clean scan, so no explosive training images are needed. Robot position is simulated.</p>`)}
