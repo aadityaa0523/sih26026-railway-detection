@@ -46,3 +46,12 @@ def test_demo_flow_pads_give_the_expected_decisions():
     assert r[2]["tier"] == "review" and r[2]["agree"] == 1      # distractor: one route only
     assert r[3]["tier"] == "alert" and r[3]["agree"] == 2       # stand-in: two routes agree
     assert r[4]["tier"] == "review" and r[4]["heat"] == "unknown"
+
+
+def test_max6675_decode():
+    from handheld.thermocouple import max6675_decode
+    assert max6675_decode(0x03, 0x20) == 25.0          # raw 800 -> 100 counts * 0.25 C
+    assert max6675_decode(0x00, 0x00) == 0.0
+    assert max6675_decode(0x7F, 0xF8) == 1023.75       # full scale
+    with pytest.raises(RuntimeError):
+        max6675_decode(0x03, 0x24)                      # bit 2 set = thermocouple not connected

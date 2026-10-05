@@ -101,11 +101,9 @@ class HardwareHeatBackend:
         self._heater.off()
 
     def _read_temp_c(self) -> float:
+        from handheld.thermocouple import max6675_decode
         hi, lo = self._spi.readbytes(2)
-        raw = (hi << 8) | lo
-        if raw & 0x4:
-            raise RuntimeError("MAX6675: thermocouple open circuit")
-        return (raw >> 3) * 0.25
+        return max6675_decode(hi, lo)
 
     def run_ramp(self) -> list[HeatSample]:
         import time
