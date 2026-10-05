@@ -144,11 +144,13 @@ function buildMemo(e, ok) {
 /* ============================= 3. PLATFORMS & TRAINS ============================= */
 function trainBoard(compact = false) {
   const now = Date.now();
-  const rows = [1, 2, 3, 4, 5, 6].map((n) => {
-    const t = currentTrain(n), st = trainState(t, now), cnt = S.events.filter((e) => e.zone === 'Platform ' + n && e.tier !== 'clean').length;
-    return `<tr class="clickable" tabindex="0" data-zonefilter="Platform ${n}"><td><b>${n}</b></td><td><b>${esc(t.name)}</b>${compact ? ` <span class="muted" style="font-size:.72rem">${esc(t.no.split('/')[0])}</span>` : `<div class="muted" style="font-size:.72rem">${esc(t.no)} · ${esc(t.route)}</div>`}</td>${compact ? '' : `<td class="mono">${fmtShort(st.arr).slice(-5)} → ${fmtShort(st.dep).slice(-5)}</td>`}<td><span class="pill ${st.k === 'at' ? 'ok' : st.k === 'arriving' ? 'info' : 'neutral'}">${esc(compact ? st.text.replace('Arriving in ', 'In ').replace('On platform, departs in ', 'At PF · ').replace(' min', 'm') : st.text)}</span></td><td class="mono">${cnt}</td></tr>`;
+  const rows = PLATFORMS.map((n) => {
+    const t = currentTrain(n), cnt = S.events.filter((e) => e.zone === 'Platform ' + n && e.tier !== 'clean').length;
+    if (!t) return `<tr class="clickable" tabindex="0" data-zonefilter="Platform ${n}"><td><b>${n}</b></td><td class="muted">No train in demo</td>${compact ? '' : '<td></td>'}<td></td><td class="mono">${cnt}</td></tr>`;
+    const st = trainState(t, now);
+    return `<tr class="clickable" tabindex="0" data-zonefilter="Platform ${n}"><td><b>${n}</b></td><td><b>${esc(t.name)}</b>${t.src === 'obs' ? ' <span class="tag">seen on live board</span>' : ''}${compact ? ` <span class="muted" style="font-size:.72rem">${esc(t.no.split('/')[0])}</span>` : `<div class="muted" style="font-size:.72rem">${esc(t.no)} · ${esc(t.route)}</div>`}</td>${compact ? '' : `<td class="mono">${fmtShort(st.arr).slice(-5)} → ${fmtShort(st.dep).slice(-5)}</td>`}<td><span class="pill ${st.k === 'at' ? 'ok' : st.k === 'arriving' ? 'info' : 'neutral'}">${esc(compact ? st.text.replace('Arriving in ', 'In ').replace('On platform, departs in ', 'At PF · ').replace(' min', 'm') : st.text)}</span></td><td class="mono">${cnt}</td></tr>`;
   }).join('');
-  return `<div class="tscroll"><table class="tbl" style="min-width:0"><thead><tr><th>PF</th><th>Train</th>${compact ? '' : '<th>Arr → Dep</th>'}<th>Status</th><th>${T('Alerts')}</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note"><b>Scripted board:</b> train names and numbers are real services that call here, but the platform allocation and timings are made up for the demo. Not the live timetable.</p>`;
+  return `<div class="tscroll"><table class="tbl" style="min-width:0"><thead><tr><th>PF</th><th>Train</th>${compact ? '' : '<th>Arr → Dep</th>'}<th>Status</th><th>${T('Alerts')}</th></tr></thead><tbody>${rows}</tbody></table></div><p class="note"><b>Mostly scripted board:</b> train names and numbers are real services that call at Tiruchirappalli Jn. Only Vaigai Express on PF-5 was seen on a public live-status sample; every other platform allocation and all timings are made up. Real allocation changes daily. Not the live timetable.</p>`;
 }
 function viewStations() {
   const list = S.events;
@@ -157,7 +159,7 @@ function viewStations() {
   return `<div class="grid g-main">
     ${panel('Platforms & Trains', `<div class="maphold">${stationMap({ events: list.slice(0, 40), robots: S.robots, showPath: true })}</div>
       <div class="legend"><span><i style="background:var(--clean)"></i>${T('Clean')}</span><span><i style="background:var(--review)"></i>${T('Review')}</span><span><i style="background:var(--alert)"></i>${T('Alert')}</span><span><i style="background:var(--navy)"></i>Robot</span></div>
-      <p class="note">Schematic of ${esc(STATIONS[0].name)}, not a surveyed plan. The platform count and layout are to be verified against the station's actual plan. Dots above a platform are its most recent events; the train named on a platform is from the scripted board.</p>`)}
+      <p class="note">Schematic of ${esc(STATIONS[0].name)}, not a surveyed plan. <b>Platform numbers</b> (1, 1A, 2-7) follow the public live-status board and the <b>island pairs</b> (2/3, 4/5, 6/7) follow the station's lift/escalator plan. Public sources also mention 9 platforms in total; the others are not drawn. Positions of the entrances, foot overbridge, parcel office and coach yard are <b>placeholders</b>. Dots above a platform are its recent events.</p>`)}
     <div>${panel(STATIONS[0].name + ' (' + STATIONS[0].code + ')', `<dl class="kv"><dt>Division</dt><dd>${esc(STATIONS[0].division)}</dd><dt>Events (24 h)</dt><dd class="mono">${list.length}</dd><dt>Open alerts</dt><dd class="mono">${list.filter(isOpen).length}</dd>
       <dt>Devices</dt><dd>${DEVICES.map((d) => d.id).join(', ')}</dd></dl>`)}
     </div></div>

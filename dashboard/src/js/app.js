@@ -34,7 +34,7 @@ const openOverlay = () => !$('overlay').hidden;
 /* ---------- static text / nav ---------- */
 const STATIC = {
   appTitle: 'RAIL-N.E.D. Control Room', appSub: 'Railway Narcotics & Explosives Detection · Prototype · SIH 2026', liveSim: 'Live simulation', contrast: 'Contrast', crumbHome: 'Home',
-  sampleBanner: 'SAMPLE / DEMO DATA — no live sensors connected. Every event here is scripted, not a real detection. Tiruchirappalli Jn train and platform board is scripted, not the live timetable.',
+  sampleBanner: 'SAMPLE / DEMO DATA — no live sensors connected. Every event here is scripted, not a real detection. Tiruchirappalli Jn platform numbers follow public sources, but the train board is mostly scripted, not the live timetable.',
   footerNote: 'RAIL-N.E.D. is a presumptive field screen, not confirmatory lab analysis. Every positive must be verified by FSL / IMS lab confirmation and NDPS Act 1985 Sec. 50 procedure before any legal action.',
 };
 function applyStatic() {

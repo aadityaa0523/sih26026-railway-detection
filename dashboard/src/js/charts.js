@@ -63,10 +63,12 @@ function zoneBase(highlight) {
   NOGO_25KV.forEach((n) => { s += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="url(#hatch)" stroke="var(--alert)" stroke-dasharray="4 3"/>`; });
   for (const [name, z] of Object.entries(ZONES)) {
     s += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="3" fill="${name === highlight ? 'var(--accent-soft)' : 'var(--surface)'}" stroke="var(--navy)" stroke-width="1.2"/>`;
-    const pm = /^Platform (\d)$/.exec(name), tr = pm ? currentTrain(+pm[1]) : null;
-    if (tr) { s += `<text x="${z.x + 8}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="700" fill="var(--navy)">${esc(RN.T(name).replace('Platform ', 'P'))}</text><text x="${z.x + z.w - 8}" y="${z.y + z.h / 2 + 4}" font-size="10" fill="var(--ink-dim)" text-anchor="end">${esc(tr.no.split('/')[0] + ' ' + tr.name)}</text>`; }
+    const pm = /^Platform (\w+)$/.exec(name), tr = pm ? currentTrain(pm[1]) : null;
+    if (pm) { s += `<text x="${z.x + 8}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="700" fill="var(--navy)">${esc(RN.T(name).replace('Platform ', 'P'))}</text>${tr ? `<text x="${z.x + z.w - 8}" y="${z.y + z.h / 2 + 4}" font-size="10" fill="var(--ink-dim)" text-anchor="end">${esc(tr.no.split('/')[0] + ' ' + tr.name)}</text>` : ''}`; }
+    else if (z.h > z.w * 3) s += `<text transform="translate(${z.x + z.w / 2 + 4},${z.y + z.h / 2}) rotate(-90)" font-size="10" font-weight="600" fill="var(--navy)" text-anchor="middle">${esc(RN.T(name))}</text>`;
     else s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="600" fill="var(--navy)" text-anchor="middle">${esc(RN.T(name))}</text>`;
   }
+  ISLANDS.forEach((i) => { s += `<text x="566" y="${(i[1] + i[2]) / 2 + 3}" font-size="8" fill="var(--ink-dim)">${esc(i[0])}</text>`; });
   return s;
 }
 const HATCH = `<defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="var(--alert-soft)"/><line x1="0" y1="0" x2="0" y2="8" stroke="var(--alert)" stroke-width="2" opacity=".5"/></pattern></defs>`;
@@ -76,7 +78,8 @@ function stationMap({ events = [], highlight = '', robots = [], showPath = false
   if (showPath) g += `<polygon points="${PATROL_PATH.map((p) => p.join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 4"/>`;
   const seen = {};
   events.forEach((e) => { const z = ZONES[e.zone]; if (!z) return; const k = (seen[e.zone] = (seen[e.zone] || 0) + 1) - 1;
-    g += `<circle cx="${z.x + 14 + (k % 8) * 16}" cy="${z.y - 8 - Math.floor(k / 8) * 14}" r="6" fill="${TIER_COLOR[e.tier]}" stroke="#fff" stroke-width="1.5"><title>${esc(RN.T(e.label))} (${esc(RN.T(e.zone))})</title></circle>`; });
+    const onPf = /^Platform/.test(e.zone), cx = onPf ? z.x + 50 + (k % 16) * 14 : z.x + 14 + (k % 8) * 16, cy = onPf ? z.y + z.h / 2 : z.y - 8 - Math.floor(k / 8) * 14;
+    g += `<circle cx="${cx}" cy="${cy}" r="${onPf ? 5 : 6}" fill="${TIER_COLOR[e.tier]}" stroke="#fff" stroke-width="1.5"><title>${esc(RN.T(e.label))} (${esc(RN.T(e.zone))})</title></circle>`; });
   robots.forEach((r) => { g += `<g transform="translate(${r.x},${r.y})"><rect x="-9" y="-6" width="18" height="12" rx="3" fill="${r.estop ? 'var(--alert)' : 'var(--navy)'}"/><circle cx="-5" cy="8" r="2" fill="var(--navy)"/><circle cx="5" cy="8" r="2" fill="var(--navy)"/><text y="-11" font-size="9" text-anchor="middle" font-weight="700" fill="var(--navy)">${esc(r.id)}</text></g>`; });
   g += `<g font-size="9" fill="var(--alert)"><text x="525" y="368">${esc(RN.T('No-go: 25 kV overhead zone'))}</text></g>`;
   return svg(760, 380, g, 'class="maphold"');
