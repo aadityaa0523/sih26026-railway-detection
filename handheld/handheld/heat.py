@@ -53,6 +53,7 @@ SIM_PROFILES: dict[str, list[tuple[float, float, float]]] = {
     "coffee": [(150.0, 25.0, -0.2), (210.0, 20.0, 0.08)],
     "diesel": [(120.0, 22.0, -0.25)],
     "sanitiser": [(80.0, 15.0, -0.2)],
+    "unfamiliar": [(130.0, 18.0, 0.35)],     # something responds, but not the nitro signature -> "unknown"
 }
 
 

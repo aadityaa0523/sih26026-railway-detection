@@ -36,3 +36,13 @@ def test_two_route_rule():
     assert fuse_routes("clean", "nitro_class").tier == "review"     # one route alone never alerts
     assert fuse_routes("alert", "clean").tier == "review"
     assert fuse_routes("clean", "clean").tier == "clean"
+
+
+def test_demo_flow_pads_give_the_expected_decisions():
+    from handheld.demo_flow import run_flow
+    quiet = lambda *_a, **_k: None
+    r = {p: run_flow(p, fast=True, out=quiet) for p in (1, 2, 3, 4)}
+    assert r[1]["tier"] == "clean"
+    assert r[2]["tier"] == "review" and r[2]["agree"] == 1      # distractor: one route only
+    assert r[3]["tier"] == "alert" and r[3]["agree"] == 2       # stand-in: two routes agree
+    assert r[4]["tier"] == "review" and r[4]["heat"] == "unknown"
