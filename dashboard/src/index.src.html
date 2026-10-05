@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAIL-N.E.D. Control Room</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<a class="skip" href="#view" id="skipLink">Skip to main content</a>
+<div class="tricolour" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead-in">
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Toggle navigation">&#9776;</button>
+    <div class="brand">
+      <div class="badge" aria-hidden="true">R-N</div>
+      <div>
+        <h1 data-t="appTitle">RAIL-N.E.D. Control Room</h1>
+        <div class="sub" data-t="appSub">Railway Narcotics &amp; Explosives Detection · Prototype · SIH 2026</div>
+      </div>
+    </div>
+    <div class="masthead-right">
+      <span class="clock mono" id="clock" title="IST"></span>
+      <span class="status-pill offline" id="connStatus"><span class="status-dot"></span><span id="connStatusText"></span></span>
+      <label class="live-toggle" title="Simulated incoming events"><input type="checkbox" id="liveToggle" checked> <span data-t="liveSim">Live simulation</span></label>
+      <div class="bell-wrap">
+        <button class="icon-btn" id="bellBtn" aria-label="Notifications">&#128276;<span class="bell-count" id="bellCount" hidden>0</span></button>
+        <div class="bell-panel" id="bellPanel" hidden></div>
+      </div>
+      <select id="roleSel" class="sel" aria-label="Role"></select>
+      <div class="seg" aria-label="Text size">
+        <button data-fs="-1" aria-label="Smaller text">A-</button><button data-fs="0" aria-label="Normal text">A</button><button data-fs="1" aria-label="Larger text">A+</button>
+      </div>
+      <button class="seg-single" id="contrastBtn" aria-pressed="false" data-t="contrast">Contrast</button>
+      <div class="seg lang-toggle">
+        <button id="langEn" class="active" data-lang="en">EN</button><button id="langHi" data-lang="hi">हिं</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="side" id="side" aria-label="Main navigation"></nav>
+  <main class="main">
+    <div class="crumbs"><span data-t="crumbHome">Home</span> &rsaquo; <b id="crumbPage"></b><span class="grow"></span><span class="muted" id="refreshed"></span></div>
+    <div class="sample-banner"><span aria-hidden="true">&#9888;</span> <span data-t="sampleBanner">SAMPLE / DEMO DATA</span></div>
+    <section id="view" tabindex="-1"></section>
+    <footer class="disclaimer" data-t="footerNote"></footer>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="js/i18n.js"></script>
+<script src="js/data.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
