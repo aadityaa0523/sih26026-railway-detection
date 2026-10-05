@@ -1,6 +1,6 @@
 'use strict';
-/* All data here is FICTIONAL / scripted demo data: fictional stations, scripted events, simulated
-   HEAT curves. Nothing is a real detection and no real station is named. */
+/* All EVENTS here are scripted demo data: scripted detections, simulated HEAT curves and signatures. Nothing is a real
+   detection. The station is Tiruchirappalli Jn but the train-to-platform board is scripted, not the live timetable. */
 
 function mulberry32(seed) {
   return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
@@ -8,24 +8,41 @@ function mulberry32(seed) {
 }
 
 const STATIONS = [
-  { id: 'RMP', name: 'Rampur Jn', division: 'Demo Division A', lat: 28.64, lon: 77.22, risk: 0.82 },
-  { id: 'KVN', name: 'Kaveri Nagar', division: 'Demo Division A', lat: 12.97, lon: 77.59, risk: 0.64 },
-  { id: 'SRD', name: 'Sarasvati Road', division: 'Demo Division B', lat: 23.02, lon: 72.57, risk: 0.55 },
-  { id: 'DHN', name: 'Dhanpur Cantt', division: 'Demo Division B', lat: 26.85, lon: 80.95, risk: 0.71 },
-  { id: 'LKM', name: 'Lakshmipur', division: 'Demo Division C', lat: 22.57, lon: 88.36, risk: 0.48 },
-  { id: 'NLG', name: 'Nilgiri Halt', division: 'Demo Division C', lat: 11.41, lon: 76.69, risk: 0.22 },
+  { id: 'TPJ', name: 'Tiruchirappalli Jn', code: 'TPJ', division: 'Tiruchirappalli Division, Southern Railway', lat: 10.8155, lon: 78.6874 },
 ];
 
-// Station schematic (shared by the map views). viewBox 0 0 760 380.
+// Schematic of the station (NOT a surveyed plan; platform count and layout are to be verified). viewBox 0 0 760 380.
 const ZONES = {
-  'Platform 1': { x: 130, y: 110, w: 300, h: 34 }, 'Platform 2': { x: 130, y: 210, w: 300, h: 34 },
-  'Foot Overbridge': { x: 330, y: 40, w: 120, h: 26 }, 'Parcel Office': { x: 560, y: 70, w: 140, h: 70 },
-  'Entry Gate A': { x: 40, y: 300, w: 90, h: 40 }, 'Entry Gate B': { x: 640, y: 300, w: 90, h: 40 },
-  'Coach Yard': { x: 200, y: 296, w: 300, h: 48 },
+  'Platform 1': { x: 130, y: 58, w: 430, h: 26 }, 'Platform 2': { x: 130, y: 98, w: 430, h: 26 }, 'Platform 3': { x: 130, y: 138, w: 430, h: 26 },
+  'Platform 4': { x: 130, y: 178, w: 430, h: 26 }, 'Platform 5': { x: 130, y: 218, w: 430, h: 26 }, 'Platform 6': { x: 130, y: 258, w: 430, h: 26 },
+  'Foot Overbridge': { x: 585, y: 100, w: 130, h: 30 }, 'Parcel Office': { x: 20, y: 40, w: 90, h: 50 },
+  'Entry Gate A': { x: 20, y: 120, w: 90, h: 40 }, 'Entry Gate B': { x: 20, y: 190, w: 90, h: 40 },
+  'Coach Yard': { x: 140, y: 312, w: 410, h: 44 },
 };
-const NOGO_25KV = [{ x: 520, y: 270, w: 100, h: 90 }, { x: 40, y: 150, w: 70, h: 120 }];
-const PATROL_PATH = [[215, 276], [485, 276], [485, 262], [215, 262]];       // closed loop along Platform 2 / Coach Yard edge
-const DOCK = { x: 215, y: 276 };
+const NOGO_25KV = [{ x: 590, y: 200, w: 140, h: 150 }, { x: 20, y: 260, w: 90, h: 100 }];
+const PATROL_PATH = [[130, 300], [560, 300], [560, 362], [130, 362]];     // loop around the coach yard
+const DOCK = { x: 130, y: 300 };
+
+// Train board: SCRIPTED. Names/numbers are real services that call at Tiruchirappalli Jn, but which platform each one
+// uses and when is made up for the demo -- it is not the live timetable. arrMin = minutes from "now" to arrival.
+const TRAINS = [
+  { no: '12635/36', name: 'Vaigai Express', route: 'Chennai Egmore ⇄ Madurai', platform: 1, arrMin: -8, dwell: 12 },
+  { no: '12605/06', name: 'Pallavan Express', route: 'Chennai Egmore ⇄ Karaikudi', platform: 1, arrMin: 55, dwell: 10 },
+  { no: '12653/54', name: 'Rockfort Express', route: 'Chennai Egmore ⇄ Tiruchirappalli', platform: 2, arrMin: 12, dwell: 15 },
+  { no: '12637/38', name: 'Pandian Express', route: 'Chennai Egmore ⇄ Madurai', platform: 3, arrMin: -3, dwell: 10 },
+  { no: '22675/76', name: 'Cholan Express', route: 'Chennai Egmore ⇄ Tiruchirappalli', platform: 4, arrMin: 25, dwell: 20 },
+  { no: '12663/64', name: 'Howrah Superfast Express', route: 'Howrah ⇄ Tiruchirappalli', platform: 5, arrMin: -20, dwell: 45 },
+  { no: '12631/32', name: 'Nellai Express', route: 'Chennai Egmore ⇄ Tirunelveli', platform: 6, arrMin: 6, dwell: 10 },
+  { no: '12633/34', name: 'Kanyakumari Express', route: 'Chennai Egmore ⇄ Kanyakumari', platform: 6, arrMin: 70, dwell: 10 },
+];
+function trainState(t, nowMs = Date.now()) {
+  const arr = nowMs + t.arrMin * 60000, dep = arr + t.dwell * 60000;
+  if (nowMs < arr) return { k: 'arriving', arr, dep, text: 'Arriving in ' + Math.max(1, Math.round((arr - nowMs) / 60000)) + ' min' };
+  if (nowMs <= dep) return { k: 'at', arr, dep, text: 'On platform, departs in ' + Math.max(1, Math.round((dep - nowMs) / 60000)) + ' min' };
+  return { k: 'left', arr, dep, text: 'Departed' };
+}
+const platformTrains = (n) => TRAINS.filter((t) => t.platform === n);
+const currentTrain = (n) => { const l = platformTrains(n), now = Date.now(); return l.find((t) => trainState(t, now).k === 'at') || l.find((t) => trainState(t, now).k === 'arriving') || l[0]; };
 
 const ROLES = {
   constable: { name: 'RPF Constable', can: ['ack', 'note', 'memo'] },
@@ -49,13 +66,13 @@ const STATUS = {
 };
 
 const DEVICES = [
-  { id: 'handheld-01', type: 'handheld', station: 'RMP', battery: 86, online: true, syncMin: 1, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '12 min ago' },
-  { id: 'handheld-02', type: 'handheld', station: 'RMP', battery: 54, online: true, syncMin: 3, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '40 min ago' },
-  { id: 'handheld-03', type: 'handheld', station: 'KVN', battery: 31, online: true, syncMin: 7, fw: 'v0.3.0', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warming (2 min)', no2: 'OK', bake: '1 h ago' },
-  { id: 'handheld-04', type: 'handheld', station: 'DHN', battery: 12, online: false, syncMin: 190, fw: 'v0.3.0', model: 'rf-v0.1 (synthetic)', heater: 'OFF', mq: 'idle', no2: 'baseline drift', bake: '5 h ago' },
-  { id: 'handheld-05', type: 'handheld', station: 'SRD', battery: 77, online: true, syncMin: 2, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '25 min ago' },
-  { id: 'quadruped-01', type: 'quadruped', station: 'RMP', battery: 68, online: true, syncMin: 1, fw: 'v0.2.4', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '18 min ago' },
-  { id: 'quadruped-02', type: 'quadruped', station: 'DHN', battery: 92, online: true, syncMin: 4, fw: 'v0.2.4', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '50 min ago' },
+  { id: 'handheld-01', type: 'handheld', station: 'TPJ', battery: 86, online: true, syncMin: 1, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '12 min ago' },
+  { id: 'handheld-02', type: 'handheld', station: 'TPJ', battery: 54, online: true, syncMin: 3, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '40 min ago' },
+  { id: 'handheld-03', type: 'handheld', station: 'TPJ', battery: 31, online: true, syncMin: 7, fw: 'v0.3.0', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warming (2 min)', no2: 'OK', bake: '1 h ago' },
+  { id: 'handheld-04', type: 'handheld', station: 'TPJ', battery: 12, online: false, syncMin: 190, fw: 'v0.3.0', model: 'rf-v0.1 (synthetic)', heater: 'OFF', mq: 'idle', no2: 'baseline drift', bake: '5 h ago' },
+  { id: 'handheld-05', type: 'handheld', station: 'TPJ', battery: 77, online: true, syncMin: 2, fw: 'v0.3.1', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '25 min ago' },
+  { id: 'quadruped-01', type: 'quadruped', station: 'TPJ', battery: 68, online: true, syncMin: 1, fw: 'v0.2.4', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '18 min ago' },
+  { id: 'quadruped-02', type: 'quadruped', station: 'TPJ', battery: 92, online: true, syncMin: 4, fw: 'v0.2.4', model: 'rf-v0.1 (synthetic)', heater: 'OK', mq: 'warmed up', no2: 'OK', bake: '50 min ago' },
 ];
 
 const COACH_SEGMENTS = [
@@ -115,11 +132,15 @@ async function verifyEvent(e) { return (await hashOf(e.prevHash + payloadOf(e)))
 /* ---- event generation ---- */
 let EVT_SEQ = 0;
 function makeEvent(rng, time) {
-  const station = STATIONS[Math.floor(rng() * STATIONS.length)];
-  const dev = DEVICES.filter((d) => d.station === station.id);
-  const device = (dev.length ? dev : DEVICES)[Math.floor(rng() * (dev.length || DEVICES.length))];
-  const zoneNames = Object.keys(ZONES);
-  const zone = device.type === 'quadruped' && rng() < 0.7 ? 'Coach Yard' : zoneNames[Math.floor(rng() * zoneNames.length)];
+  const station = STATIONS[0];
+  const device = DEVICES[Math.floor(rng() * DEVICES.length)];
+  const platforms = ['Platform 1', 'Platform 2', 'Platform 3', 'Platform 4', 'Platform 5', 'Platform 6'];
+  const others = ['Foot Overbridge', 'Parcel Office', 'Entry Gate A', 'Entry Gate B', 'Coach Yard'];
+  const zone = device.type === 'quadruped' && rng() < 0.7 ? 'Coach Yard'
+    : rng() < 0.72 ? platforms[Math.floor(rng() * platforms.length)] : others[Math.floor(rng() * others.length)];
+  const pm = /^Platform (\d)$/.exec(zone), tl = pm ? platformTrains(+pm[1]) : [];
+  const tr = tl.length ? tl[Math.floor(rng() * tl.length)] : null;
+  const coach = tr ? ['S1', 'S4', 'S7', 'B2', 'A1', 'D3', 'GS-1', 'GS-2'][Math.floor(rng() * 8)] : (zone === 'Coach Yard' ? 'Bay A' + (1 + Math.floor(rng() * 5)) : null);
   const r = rng();
   let scn = r < 0.60 ? 'clean' : r < 0.78 ? 'sniff_only' : r < 0.86 ? 'unknown' : r < 0.93 ? 'heat_only' : 'two_route';
   if (device.type === 'quadruped' && scn === 'sniff_only') scn = 'see_only';
@@ -143,6 +164,7 @@ function makeEvent(rng, time) {
   const jit = () => (rng() - 0.5) * 0.004;
   return {
     id: 'EVT-' + String(++EVT_SEQ).padStart(4, '0'), time: new Date(time).toISOString(), station: station.id, zone, deviceId: device.id,
+    train: tr ? { no: tr.no, name: tr.name } : null, coach,
     tier: fused.tier, agree: fused.agree, label, confidence: +conf.toFixed(3), scenario: scn,
     routes: { sniff, heat, see, seeChecked: device.type === 'quadruped' },
     lat: +(station.lat + jit()).toFixed(4), lon: +(station.lon + jit()).toFixed(4),

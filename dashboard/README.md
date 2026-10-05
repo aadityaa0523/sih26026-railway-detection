@@ -5,8 +5,11 @@ Open it directly, or `node server.js` and visit http://localhost:8845.
 
 Sources live in `src/` (`index.src.html`, `css/`, `js/`). After editing them run `node build.js` to regenerate `index.html`.
 
-**All data is fictional or simulated**: fictional stations, scripted events, simulated HEAT
-curves and device signatures. Every page carries a SAMPLE / DEMO banner. No official emblem or
+**All events are scripted or simulated**: scripted detections, simulated HEAT curves and device
+signatures. The station is Tiruchirappalli Jn (TPJ), with platforms 1-6 and a train board whose
+train names/numbers are real services calling there but whose platform allocation and timings are
+**made up** (not the live timetable); platform count and layout are a schematic to be verified.
+Every page carries a SAMPLE / DEMO banner. No official emblem or
 logo is used; this is not an official system.
 
 ## Pages
@@ -15,7 +18,7 @@ logo is used; this is not an official system.
 | Command Centre | KPIs, 24 h alert chart, tier donut, priority queue, route-agreement (two-route rule), station risk ranking, live feed |
 | Alert Register | search + filters (tier, station, status, route), CSV export, event detail |
 | Event detail | three routes (SNIFF / HEAT / SEE), sensor trace, simulated HEAT NO2-vs-temperature curve, workflow (acknowledge -> dispatch -> FSL -> confirmed / false positive), notes, chain check, memo generator |
-| Stations & Zones | station schematic with event markers, robot position, 25 kV no-go zones, per-zone alert thresholds |
+| Platforms & Trains | Tiruchirappalli Jn schematic (6 platforms) with the scripted train on each platform, event markers, robot position, 25 kV no-go zones, per-zone alert thresholds |
 | Device Fleet | handhelds and quadrupeds: battery, sync, firmware, model version, heater / MQ / NO2 health, robot commands |
 | Robot Patrol | simulated patrol loop, hold / resume / dock / e-stop, last-clean-scan baseline per coach or track segment |
 | Evidence & Custody | hash-linked, signed (simulated) records with "verify all"; one record is deliberately tampered |

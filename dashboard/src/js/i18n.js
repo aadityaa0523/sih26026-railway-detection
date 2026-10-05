@@ -8,12 +8,12 @@ const HI = {
   'Railway Narcotics & Explosives Detection · Prototype · SIH 2026': 'रेलवे नशीले पदार्थ एवं विस्फोटक पहचान · प्रोटोटाइप · SIH 2026',
   'Live simulation': 'लाइव सिमुलेशन', 'Contrast': 'कंट्रास्ट', 'Home': 'होम',
   'Online': 'ऑनलाइन', 'Offline (Demo Mode)': 'ऑफ़लाइन (डेमो मोड)', 'events queued': 'इवेंट कतार में',
-  'SAMPLE / DEMO DATA — no live sensors connected. Every station, device and event here is fictional or scripted, not a real detection.':
-    'नमूना / डेमो डेटा — कोई लाइव सेंसर कनेक्ट नहीं है। यहाँ हर स्टेशन, डिवाइस और घटना काल्पनिक या तैयार है, वास्तविक पहचान नहीं।',
+  'SAMPLE / DEMO DATA — no live sensors connected. Every event here is scripted, not a real detection. Tiruchirappalli Jn train and platform board is scripted, not the live timetable.':
+    'नमूना / डेमो डेटा — कोई लाइव सेंसर कनेक्ट नहीं है। यहाँ हर घटना तैयार है, वास्तविक पहचान नहीं। तिरुचिरापल्ली जं. की ट्रेन व प्लेटफ़ॉर्म सूची तैयार है, वास्तविक समय-सारणी नहीं।',
   'RAIL-N.E.D. is a presumptive field screen, not confirmatory lab analysis. Every positive must be verified by FSL / IMS lab confirmation and NDPS Act 1985 Sec. 50 procedure before any legal action.':
     'RAIL-N.E.D. एक प्रारंभिक फ़ील्ड जांच है, पुष्टिकारक प्रयोगशाला विश्लेषण नहीं। किसी भी कानूनी कार्रवाई से पहले हर पॉज़िटिव का FSL / IMS प्रयोगशाला पुष्टि तथा एनडीपीएस अधिनियम 1985 धारा 50 प्रक्रिया से सत्यापन आवश्यक है।',
   // nav
-  'Command Centre': 'कमांड सेंटर', 'Alert Register': 'अलर्ट रजिस्टर', 'Stations & Zones': 'स्टेशन एवं क्षेत्र', 'Device Fleet': 'डिवाइस बेड़ा',
+  'Command Centre': 'कमांड सेंटर', 'Alert Register': 'अलर्ट रजिस्टर', 'Platforms & Trains': 'प्लेटफ़ॉर्म एवं ट्रेनें', 'Platform / Train': 'प्लेटफ़ॉर्म / ट्रेन', 'Platform risk ranking': 'प्लेटफ़ॉर्म जोखिम क्रम', 'Trains at platforms': 'प्लेटफ़ॉर्म पर ट्रेनें', 'Device Fleet': 'डिवाइस बेड़ा',
   'Robot Patrol': 'रोबोट गश्त', 'Evidence & Custody': 'साक्ष्य एवं अभिरक्षा', 'FSL Learning Loop': 'FSL लर्निंग लूप', 'Reports & Analytics': 'रिपोर्ट एवं विश्लेषण', 'Admin & Audit': 'प्रशासन एवं ऑडिट',
   'SAMPLE': 'नमूना', 'Station map': 'स्टेशन मानचित्र', 'Operations': 'संचालन', 'Intelligence': 'इंटेलिजेंस', 'Governance': 'शासन',
   // roles
@@ -36,7 +36,7 @@ const HI = {
   'Generate seizure memo': 'ज़ब्ती ज्ञापन बनाएं', 'Copy to clipboard': 'क्लिपबोर्ड पर कॉपी करें', 'Copied.': 'कॉपी हुआ।', 'Officer ID': 'अधिकारी आईडी', 'Notes': 'टिप्पणियाँ', 'Add note': 'टिप्पणी जोड़ें', 'Coordinates': 'निर्देशांक',
   'Workflow': 'कार्यप्रवाह', 'Your role cannot perform this action.': 'आपकी भूमिका यह कार्य नहीं कर सकती।',
   // zones
-  'Platform 1': 'प्लेटफ़ॉर्म 1', 'Platform 2': 'प्लेटफ़ॉर्म 2', 'Foot Overbridge': 'पैदल ऊपरी पुल', 'Parcel Office': 'पार्सल कार्यालय', 'Entry Gate A': 'प्रवेश द्वार A', 'Entry Gate B': 'प्रवेश द्वार B', 'Coach Yard': 'कोच यार्ड',
+  'Platform 1': 'प्लेटफ़ॉर्म 1', 'Platform 2': 'प्लेटफ़ॉर्म 2', 'Platform 3': 'प्लेटफ़ॉर्म 3', 'Platform 4': 'प्लेटफ़ॉर्म 4', 'Platform 5': 'प्लेटफ़ॉर्म 5', 'Platform 6': 'प्लेटफ़ॉर्म 6', 'Foot Overbridge': 'पैदल ऊपरी पुल', 'Parcel Office': 'पार्सल कार्यालय', 'Entry Gate A': 'प्रवेश द्वार A', 'Entry Gate B': 'प्रवेश द्वार B', 'Coach Yard': 'कोच यार्ड',
   // labels
   'Cannabis (terpene profile match)': 'गांजा (टरपीन प्रोफ़ाइल मिलान)', 'Unknown VOC — needs confirmation': 'अज्ञात VOC — पुष्टि आवश्यक',
   'Acetic-acid marker (heroin-processing proxy)': 'एसिटिक-एसिड मार्कर (हेरोइन-प्रसंस्करण संकेतक)', 'No marker detected': 'कोई मार्कर नहीं मिला',

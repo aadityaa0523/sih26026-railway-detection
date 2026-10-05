@@ -63,7 +63,9 @@ function zoneBase(highlight) {
   NOGO_25KV.forEach((n) => { s += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="url(#hatch)" stroke="var(--alert)" stroke-dasharray="4 3"/>`; });
   for (const [name, z] of Object.entries(ZONES)) {
     s += `<rect x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="3" fill="${name === highlight ? 'var(--accent-soft)' : 'var(--surface)'}" stroke="var(--navy)" stroke-width="1.2"/>`;
-    s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="600" fill="var(--navy)" text-anchor="middle">${esc(RN.T(name))}</text>`;
+    const pm = /^Platform (\d)$/.exec(name), tr = pm ? currentTrain(+pm[1]) : null;
+    if (tr) { s += `<text x="${z.x + 8}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="700" fill="var(--navy)">${esc(RN.T(name).replace('Platform ', 'P'))}</text><text x="${z.x + z.w - 8}" y="${z.y + z.h / 2 + 4}" font-size="10" fill="var(--ink-dim)" text-anchor="end">${esc(tr.no.split('/')[0] + ' ' + tr.name)}</text>`; }
+    else s += `<text x="${z.x + z.w / 2}" y="${z.y + z.h / 2 + 4}" font-size="11" font-weight="600" fill="var(--navy)" text-anchor="middle">${esc(RN.T(name))}</text>`;
   }
   return s;
 }

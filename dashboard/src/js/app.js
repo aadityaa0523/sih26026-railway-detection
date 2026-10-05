@@ -5,11 +5,11 @@ const store = {
   set(k, v) { try { localStorage.setItem('rn_' + k, v); } catch (e) { /* storage blocked: UI still works */ } },
 };
 const S = {
-  events: [], audit: [], role: 'inspector', route: 'overview', sel: null, selChainOk: true, stationSel: 'RMP', live: true, queue: 3, bell: [], bellCount: 0,
-  filters: { q: '', tier: '', station: '', status: '', route: '' }, thresholds: {}, patrolTick: 0, rollout: {}, online: false,
+  events: [], audit: [], role: 'inspector', route: 'overview', sel: null, selChainOk: true, live: true, queue: 3, bell: [], bellCount: 0,
+  filters: { q: '', tier: '', zone: '', status: '', route: '' }, thresholds: {}, patrolTick: 0, rollout: {}, online: false,
   robots: [
-    { id: 'quadruped-01', station: 'RMP', mode: 'patrolling', progress: 0.0, battery: 68, x: 0, y: 0 },
-    { id: 'quadruped-02', station: 'DHN', mode: 'patrolling', progress: 0.5, battery: 92, x: 0, y: 0 },
+    { id: 'quadruped-01', station: 'TPJ', mode: 'patrolling', progress: 0.0, battery: 68, x: 0, y: 0 },
+    { id: 'quadruped-02', station: 'TPJ', mode: 'patrolling', progress: 0.5, battery: 92, x: 0, y: 0 },
   ],
 };
 Object.keys(ZONES).forEach((z) => { S.thresholds[z] = z === 'Parcel Office' ? 0.85 : 0.75; });
@@ -25,8 +25,8 @@ function toast(msg, cls = '', openId = '') {
 function download(name, text, type = 'text/csv') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
 function toCsv(list) {
   const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
-  const rows = [['id', 'time', 'station', 'zone', 'device', 'tier', 'label', 'confidence', 'routes_agreeing', 'status', 'officer', 'hash']];
-  list.forEach((e) => rows.push([e.id, e.time, stName(e.station), e.zone, e.deviceId, e.tier, e.label, e.confidence, e.agree, e.status, e.officer, e.hash]));
+  const rows = [['id', 'time', 'station', 'zone', 'train', 'coach', 'device', 'tier', 'label', 'confidence', 'routes_agreeing', 'status', 'officer', 'hash']];
+  list.forEach((e) => rows.push([e.id, e.time, stName(e.station), e.zone, e.train ? e.train.no + ' ' + e.train.name : '', e.coach || '', e.deviceId, e.tier, e.label, e.confidence, e.agree, e.status, e.officer, e.hash]));
   return rows.map((r) => r.map(q).join(',')).join('\n');
 }
 const openOverlay = () => !$('overlay').hidden;
@@ -34,7 +34,7 @@ const openOverlay = () => !$('overlay').hidden;
 /* ---------- static text / nav ---------- */
 const STATIC = {
   appTitle: 'RAIL-N.E.D. Control Room', appSub: 'Railway Narcotics & Explosives Detection · Prototype · SIH 2026', liveSim: 'Live simulation', contrast: 'Contrast', crumbHome: 'Home',
-  sampleBanner: 'SAMPLE / DEMO DATA — no live sensors connected. Every station, device and event here is fictional or scripted, not a real detection.',
+  sampleBanner: 'SAMPLE / DEMO DATA — no live sensors connected. Every event here is scripted, not a real detection. Tiruchirappalli Jn train and platform board is scripted, not the live timetable.',
   footerNote: 'RAIL-N.E.D. is a presumptive field screen, not confirmatory lab analysis. Every positive must be verified by FSL / IMS lab confirmation and NDPS Act 1985 Sec. 50 procedure before any legal action.',
 };
 function applyStatic() {
@@ -104,7 +104,7 @@ async function pushLiveEvent() {
   await linkEvent(e, S.events[0] ? S.events[0].hash : '0'.repeat(64));
   S.events.unshift(e);
   S.queue = Math.max(0, S.queue + (liveRng() < 0.5 ? 1 : -1));
-  if (e.tier !== 'clean') { S.bell.unshift(e.id); S.bell = S.bell.slice(0, 8); S.bellCount++; toast(`${e.tier.toUpperCase()}: ${T(e.label)} · ${stName(e.station)}`, e.tier === 'alert' ? 'alert' : '', e.id); }
+  if (e.tier !== 'clean') { S.bell.unshift(e.id); S.bell = S.bell.slice(0, 8); S.bellCount++; toast(`${e.tier.toUpperCase()}: ${T(e.label)} · ${T(e.zone)}${e.train ? ' · ' + e.train.name : ''}`, e.tier === 'alert' ? 'alert' : '', e.id); }
   updateBell(); applyStatic();
   const ae = document.activeElement;
   if (!openOverlay() && !(ae && /INPUT|SELECT|TEXTAREA/.test(ae.tagName)) && ['overview', 'alerts', 'stations'].includes(S.route)) render();
@@ -112,13 +112,13 @@ async function pushLiveEvent() {
 }
 function updateBell() { const c = $('bellCount'); c.hidden = !S.bellCount; c.textContent = S.bellCount; }
 function renderBell() {
-  $('bellPanel').innerHTML = S.bell.length ? S.bell.map((id) => { const e = S.events.find((x) => x.id === id); return e ? `<div class="bi" data-open="${e.id}">${tierPill(e.tier)} ${esc(T(e.label))}<div class="muted mono" style="font-size:.72rem">${esc(stName(e.station))} · ${fmtShort(e.time)}</div></div>` : ''; }).join('') : `<div class="bi muted">No new alerts.</div>`;
+  $('bellPanel').innerHTML = S.bell.length ? S.bell.map((id) => { const e = S.events.find((x) => x.id === id); return e ? `<div class="bi" data-open="${e.id}">${tierPill(e.tier)} ${esc(T(e.label))}<div class="muted mono" style="font-size:.72rem">${esc(T(e.zone))}${e.train ? ' · ' + esc(e.train.name) : ''} · ${fmtShort(e.time)}</div></div>` : ''; }).join('') : `<div class="bi muted">No new alerts.</div>`;
 }
 
 /* ---------- actions ---------- */
 const PERM = { ack: 'ack', dispatched: 'dispatch', fsl: 'fsl', confirmed: 'confirm', fp: 'fp', closed: 'close' };
 const ACT = {
-  resetFilters() { S.filters = { q: '', tier: '', station: '', status: '', route: '' }; render(); },
+  resetFilters() { S.filters = { q: '', tier: '', zone: '', status: '', route: '' }; render(); },
   exportCsv() { download('rail-ned-events-DEMO.csv', toCsv(S.route === 'alerts' ? filteredEvents() : S.events)); logAudit('Exported event CSV'); },
   closeDetail() { $('overlay').hidden = true; render(); },
   wf(el) {
@@ -155,13 +155,13 @@ document.addEventListener('click', (ev) => {
   if (!t.closest('.bell-wrap')) $('bellPanel').hidden = true;
   if (t === $('overlay')) { ACT.closeDetail(); return; }
   const open = t.closest('[data-open]'); if (open) { $('bellPanel').hidden = true; openDetail(open.dataset.open); return; }
-  const st = t.closest('[data-station]'); if (st) { S.stationSel = st.dataset.station; if (S.route !== 'stations') location.hash = '#/stations'; else render(); return; }
+  const zf = t.closest('[data-zonefilter]'); if (zf) { S.filters = { q: '', tier: '', zone: zf.dataset.zonefilter, status: '', route: '' }; if (S.route !== 'alerts') location.hash = '#/alerts'; else render(); return; }
   const rb = t.closest('[data-robot]'); if (rb) { robotCmd(rb.dataset.robot, rb.dataset.cmd); return; }
   const a = t.closest('[data-act]'); if (a && ACT[a.dataset.act]) ACT[a.dataset.act](a);
 });
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && openOverlay()) ACT.closeDetail();
-  if (ev.key === 'Enter' && ev.target.matches && ev.target.matches('[data-open],[data-station]')) ev.target.click();
+  if (ev.key === 'Enter' && ev.target.matches && ev.target.matches('[data-open],[data-zonefilter]')) ev.target.click();
 });
 document.addEventListener('input', (ev) => {
   const f = ev.target.dataset && ev.target.dataset.filter; if (f && ev.target.tagName === 'INPUT') { S.filters[f] = ev.target.value; render(true); }
